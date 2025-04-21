@@ -12,9 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 /// Add services to the container.
 builder.Services.AddControllersWithViews();
 
-var sqlPassword = Environment.GetEnvironmentVariable("SQL_PASSWORD");
 var rawConnStr = builder.Configuration.GetConnectionString("Sql");
+var sqlPassword = Environment.GetEnvironmentVariable("SQL_PASSWORD");
+
 var finalConnStr = rawConnStr.Replace("__thiswontwork__", sqlPassword);
+
 
 builder.Services.AddDbContext<SqlDataContext>(options =>
 {
@@ -33,7 +35,7 @@ builder.Services.AddAuthorization();
 // AWS S3 Setup
 var awsAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESSKEY");
 var awsSecretKey = Environment.GetEnvironmentVariable("AWS_SECRETKEY");
-var awsRegion = RegionEndpoint.USEast2; // Change to your bucket's region if needed
+var awsRegion = RegionEndpoint.USEast2;
 
 builder.Services.AddSingleton<IAmazonS3>(_ =>
     new AmazonS3Client(awsAccessKey, awsSecretKey, awsRegion));
