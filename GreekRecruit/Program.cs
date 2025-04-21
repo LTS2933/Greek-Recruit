@@ -9,7 +9,7 @@ using GreekRecruit.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+/// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var sqlPassword = Environment.GetEnvironmentVariable("SQL_PASSWORD");
