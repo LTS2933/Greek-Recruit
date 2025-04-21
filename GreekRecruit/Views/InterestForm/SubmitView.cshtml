@@ -1,0 +1,85 @@
+﻿@model GreekRecruit.Models.InterestFormSubmission
+@{
+    ViewData["Title"] = ViewData["FormName"];
+    var formId = (int)ViewData["FormId"];
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<div class="container my-4">
+    <h2 class="mb-4">@ViewData["FormName"]</h2>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="SubmitForm" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="form_id" value="@formId" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name *</label>
+                        <input type="text" name="pnm_fname" class="form-control" required autofocus/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name *</label>
+                        <input type="text" name="pnm_lname" class="form-control" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="pnm_email" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Phone *</label>
+                        <input type="tel" name="pnm_phone" class="form-control" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">School Year *</label>
+                        <input type="text" name="pnm_schoolyear" class="form-control" required/>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Major (if known)</label>
+                        <input type="text" name="pnm_major" class="form-control" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">GPA (if known)</label>
+                        <input type="number" step="0.01" min="0" max="4" name="pnm_gpa" class="form-control" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Instagram Handle (do not inclue "@@")</label>
+                        <input type="text" name="pnm_instagramhandle" class="form-control" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Do you know any current members? If yes, please list them:</label>
+                        <textarea name="pnm_membersknown" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="pnm_profilepicture" class="form-label">Profile Picture (optional)</label>
+                        <input type="file" id="pnm_profilepicture" name="pnm_profilepicture"
+                               accept="image/*" class="form-control" />
+                    </div>
+
+
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,58 @@
+﻿@model List<GreekRecruit.Models.PNM>
+
+@{
+    ViewData["Title"] = "Mass Text";
+}
+
+<div class="container mt-5">
+    <h2>Send a Mass Text</h2>
+
+    <form id="massTextForm" class="mb-4">
+        <label for="textMessage" class="form-label">Message to Send:</label>
+        <textarea class="form-control" id="textMessage" rows="3" placeholder="Type your message here..."></textarea>
+    </form>
+
+    <hr />
+
+    <h4>Select Recipients:</h4>
+
+    <div id="recipientList">
+        @foreach (var pnm in Model)
+        {
+            if (!string.IsNullOrEmpty(pnm.pnm_phone))
+            {
+                <div class="d-flex align-items-center mb-2">
+                    <strong class="me-3">@pnm.pnm_fname @pnm.pnm_lname</strong>
+                    <span class="me-3 text-muted">(@pnm.pnm_phone)</span>
+                    <a class="btn btn-outline-primary btn-sm send-btn"
+                       data-phone="@pnm.pnm_phone"
+                       data-name="@pnm.pnm_fname">
+                        Send
+                    </a>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const messageBox = document.getElementById("textMessage");
+        const sendButtons = document.querySelectorAll(".send-btn");
+
+        sendButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                const phone = button.getAttribute("data-phone");
+                const message = encodeURIComponent(messageBox.value.trim());
+
+                if (!message) {
+                    alert("Please enter a message before sending.");
+                    return;
+                }
+
+                const smsLink = `sms:${phone}?&body=${message}`;
+                window.location.href = smsLink;
+            });
+        });
+    });
+</script>

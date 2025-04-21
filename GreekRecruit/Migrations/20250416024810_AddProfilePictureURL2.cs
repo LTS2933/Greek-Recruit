@@ -1,0 +1,28 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace GreekRecruit.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddProfilePictureURL2 : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<string>(
+                name: "pnm_profilepicture_url",
+                table: "InterestFormSubmissions",
+                type: "nvarchar(max)",
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "pnm_profilepicture_url",
+                table: "InterestFormSubmissions");
+        }
+    }
+}

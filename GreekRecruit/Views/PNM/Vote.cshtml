@@ -1,0 +1,47 @@
+﻿@model (GreekRecruit.Models.PNM Pnm, GreekRecruit.Models.PNMVoteSession CurrentSession)
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+@{
+    var pnm = Model.Pnm;
+    var session = Model.CurrentSession;
+}
+
+<div class="container mt-5 text-center">
+    <h2>Vote on @pnm.pnm_fname @pnm.pnm_lname</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (session == null)
+    {
+        <div class="alert alert-info mt-4">
+            Sorry, there is no open voting session for this PNM currently.
+        </div>
+    }
+    else
+    {
+        <p class="mt-4">
+            Tap <strong>Yes</strong> or <strong>No</strong> to cast your vote.
+        </p>
+        <form asp-action="SubmitVote" asp-controller="PNM" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="pnm_id" value="@pnm.pnm_id" />
+            <button type="submit" name="voteValue" value="Yes" class="btn btn-success me-3">Yes</button>
+            <button type="submit" name="voteValue" value="No" class="btn btn-danger">No</button>
+        </form>
+    }
+</div>

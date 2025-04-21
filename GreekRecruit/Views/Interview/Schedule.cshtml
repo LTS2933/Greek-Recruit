@@ -1,0 +1,186 @@
+﻿@model GreekRecruit.Models.Interview
+@{
+    ViewData["Title"] = "Schedule Interview";
+    var pnms = ViewData["PNMs"] as List<GreekRecruit.Models.PNM>;
+}
+
+@{
+    var username = User.Identity?.Name;
+    var context = Context.RequestServices.GetService(typeof(SqlDataContext)) as SqlDataContext;
+    var user = context?.Users.FirstOrDefault(u => u.username == username);
+    bool isAdmin = false;
+    if (user?.role == "Admin")
+    {
+        isAdmin = true;
+    }
+}
+
+<nav class="navbar navbar-light bg-light p-3 d-flex justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+        <a asp-controller="Home" asp-action="Index" class="navbar-brand d-flex align-items-center">
+            <img src="/images/greekrecruit_logo.png" alt="Home" width="40" height="40" class="d-inline-block align-top">
+            <span class="ms-2">Home</span>
+        </a>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="eventsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Events
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="eventsDropdown">
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="AddEvent" asp-action="Index">Add Event</a></li>
+                }
+                <li><a class="dropdown-item" asp-controller="Event" asp-action="Index">View Events</a></li>
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="pnmsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                PNMs
+            </button>
+            <ul class="dropdown-menu" style="white-space: nowrap; min-width: max-content;" aria-labelledby="pnmsDropdown">
+
+                <li><a class="dropdown-item" asp-controller="AddPNM" asp-action="Index">Add PNM</a></li>
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="AddPNM" asp-action="AddPNMCSV">Import PNMs from CSV</a></li>
+                }
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="formsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Interest Forms
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="formsDropdown">
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="InterestForm" asp-action="Create">Add Interest Form</a></li>
+                }
+                <li><a class="dropdown-item" asp-controller="InterestForm" asp-action="Index">View Forms/Submissions</a></li>
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="interviewsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Interviews
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="interviewsDropdown">
+                <li><a class="dropdown-item" asp-controller="Interview" asp-action="Index">View Interview Schedule</a></li>
+            </ul>
+        </div>
+
+    </div>
+
+
+    <div class="d-flex align-items-center gap-2">
+
+
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle rounded-circle p-2"
+                    type="button"
+                    id="userMenuButton"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                @User.Identity?.Name?.Substring(0, 1).ToUpper()
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
+                <li><a asp-controller="Profile" asp-action="Index" class="dropdown-item">Profile</a></li>
+                <li><a asp-controller="Dashboard" asp-action="Index" class="dropdown-item">Stats & Insights</a></li>
+                @{
+                    if (isAdmin)
+                    {
+                        <li><a asp-controller="Profile" asp-action="AddUsers" class="dropdown-item">Add Users</a></li>
+                        <li><a asp-controller="AdminTask" asp-action="Index" class="dropdown-item">View Tasks</a></li>
+                    }
+                }
+                <li><a asp-action="Logout" class="btn btn-primary">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- Flatpickr CSS -->
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+<!-- jQuery (required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- TempData Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="container mt-5">
+    <h2 class="mb-4">Schedule a New Interview</h2>
+
+    <form asp-action="Schedule" method="post">
+        <div class="mb-3">
+            <label for="pnm_id" class="form-label">Select PNM</label>
+            <select class="form-select select2" id="pnm_id" name="pnm_id" required>
+                <option value="">-- Select PNM --</option>
+                @foreach (var pnm in pnms)
+                {
+                    <option value="@pnm.pnm_id">@pnm.pnm_fname @pnm.pnm_lname</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="interview_datetime" class="form-label">Interview Date & Time</label>
+            <input type="text" class="form-control" id="interview_datetime" name="interview_datetime" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="location" class="form-label">Location</label>
+            <input type="text" class="form-control" id="location" name="location" />
+        </div>
+
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Schedule Interview</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+<script>
+    flatpickr("#interview_datetime", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        minDate: "today"
+    });
+
+    $(document).ready(function () {
+        $('.select2').select2({
+            placeholder: "Start typing a PNM's name...",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>

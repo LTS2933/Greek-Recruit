@@ -1,0 +1,446 @@
+﻿@model (GreekRecruit.Models.PNM PNM, List<GreekRecruit.Models.Comment> Comments, List<GreekRecruit.Models.PNMVoteSession> Sessions)
+
+@{
+    ViewData["Title"] = "PNM Profile";
+    var pnm = Model.PNM;
+    var comments = Model.Comments;
+    var sessions = Model.Sessions;
+}
+
+<!-- Bootstrap -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+@{
+    bool isAdmin = false;
+    var username = User.Identity.Name;
+    var context = Context.RequestServices.GetService(typeof(SqlDataContext)) as SqlDataContext;
+    var user = context?.Users.FirstOrDefault(u => u.username == username);
+
+    if (user?.role == "Admin")
+    {
+        isAdmin = true;
+    }
+}
+
+<!-- Navbar -->
+<nav class="navbar navbar-light bg-light p-3 d-flex justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+        <a asp-controller="Home" asp-action="Index" class="navbar-brand d-flex align-items-center">
+            <img src="/images/greekrecruit_logo.png" alt="Home" width="40" height="40" class="d-inline-block align-top">
+            <span class="ms-2">Home</span>
+        </a>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="eventsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Events
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="eventsDropdown">
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="AddEvent" asp-action="Index">Add Event</a></li>
+                }
+                <li><a class="dropdown-item" asp-controller="Event" asp-action="Index">View Events</a></li>
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="pnmsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                PNMs
+            </button>
+            <ul class="dropdown-menu" style="white-space: nowrap; min-width: max-content;" aria-labelledby="pnmsDropdown">
+
+                <li><a class="dropdown-item" asp-controller="AddPNM" asp-action="Index">Add PNM</a></li>
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="AddPNM" asp-action="AddPNMCSV">Import PNMs from CSV</a></li>
+                }
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="formsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Interest Forms
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="formsDropdown">
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="InterestForm" asp-action="Create">Add Interest Form</a></li>
+                }
+                <li><a class="dropdown-item" asp-controller="InterestForm" asp-action="Index">View Forms/Submissions</a></li>
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="interviewsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Interviews
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="interviewsDropdown">
+                <li><a class="dropdown-item" asp-controller="Interview" asp-action="Index">View Interview Schedule</a></li>
+            </ul>
+        </div>
+
+    </div>
+
+
+    <div class="d-flex align-items-center gap-2">
+
+
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle rounded-circle p-2"
+                    type="button"
+                    id="userMenuButton"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                @User.Identity?.Name?.Substring(0, 1).ToUpper()
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
+                <li><a asp-controller="Profile" asp-action="Index" class="dropdown-item">Profile</a></li>
+                <li><a asp-controller="Dashboard" asp-action="Index" class="dropdown-item">Stats & Insights</a></li>
+                @{
+                    if (isAdmin)
+                    {
+                        <li><a asp-controller="Profile" asp-action="AddUsers" class="dropdown-item">Add Users</a></li>
+                        <li><a asp-controller="AdminTask" asp-action="Index" class="dropdown-item">View Tasks</a></li>
+                    }
+                }
+                <li><a asp-action="Logout" class="btn btn-primary">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<!-- TempData Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Main Container -->
+<div class="container my-4">
+    <h2 class="mb-4">@pnm.pnm_fname @pnm.pnm_lname</h2>
+
+    <!-- Row for PNM Info & Profile Picture -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header">
+                    <strong>PNM Information</strong>
+                </div>
+                <div class="card-body">
+
+                    @if (isAdmin)
+                    {
+                        <form asp-action="EditInfo" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="pnm_id" value="@pnm.pnm_id" />
+
+                            <div class="mb-2">
+                                <label>Email</label>
+                                <input type="email" name="pnm_email" value="@pnm.pnm_email" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Phone</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="text" id="pnmPhoneInput" name="pnm_phone" value="@pnm.pnm_phone" class="form-control" />
+                                    <div id="macSMSButtonContainer" class="ms-2"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label>GPA</label>
+                                <input type="text" name="pnm_gpa" value="@pnm.pnm_gpa" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Major</label>
+                                <input type="text" name="pnm_major" value="@pnm.pnm_major" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>School Year</label>
+                                <input type="text" name="pnm_schoolyear" value="@pnm.pnm_schoolyear" class="form-control" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Semester</label>
+                                <select class="form-select" name="pnm_semester">
+                                    @{
+                                        var currentYear = DateTime.Now.Year;
+                                        var semesterOptions = new List<string> {
+                                $"Spring {currentYear}",
+                                $"Fall {currentYear}",
+                                $"Spring {currentYear - 1}",
+                                $"Fall {currentYear - 1}",
+                                $"Spring {currentYear + 1}",
+                                $"Fall {currentYear + 1}"
+                                };
+                                    }
+                                    @foreach (var sem in semesterOptions)
+                                    {
+                                        <option value="@sem" selected="@(sem == @pnm.pnm_semester ? "selected" : null)">@sem</option>
+                                    }
+                                </select>
+                            </div>
+
+
+
+                            <div class="text-end mt-3">
+                                <button type="submit" class="btn btn-success">
+                                    Save Info
+                                </button>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <p><strong>Email:</strong> @pnm.pnm_email</p>
+                        <p><strong>Phone:</strong> @pnm.pnm_phone</p>
+                        <p><strong>GPA:</strong> @pnm.pnm_gpa</p>
+                        <p><strong>Major:</strong> @pnm.pnm_major</p>
+                        <p><strong>School Year:</strong> @pnm.pnm_schoolyear</p>
+                    }
+
+                    <p>
+                        <strong>Instagram:</strong>
+                        @if (!string.IsNullOrEmpty(pnm.pnm_instagramhandle))
+                        {
+                            <a href="https://instagram.com/@pnm.pnm_instagramhandle" target="_blank">
+                                @("@" + pnm.pnm_instagramhandle)
+                            </a>
+                        }
+                        else
+                        {
+                            <span>No handle provided</span>
+                        }
+                    </p>
+
+                    @if (isAdmin)
+                    {
+                        <!-- Admin can edit the PNM Status -->
+                        <form asp-action="EditStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="pnm_id" value="@pnm.pnm_id" />
+                            <label for="pnm_status" class="form-label">Status</label>
+                            @{
+                                var currentStatus = string.IsNullOrEmpty(pnm.pnm_status) ? "Pending" : pnm.pnm_status;
+                            }
+                            <select name="pnm_status" class="form-select" id="pnm_status">
+                                <!option value="Pending" @(currentStatus == "Pending" ? "selected" : "")>Pending</!option>
+                                <!option value="Accepted" @(currentStatus == "Accepted" ? "selected" : "")>Accepted</!option>
+                                <!option value="Offered" @(currentStatus == "Offered" ? "selected" : "")>Offered</!option>
+                                <!option value="No Offer" @(currentStatus == "No Offer" ? "selected" : "")>No Offer</!option>
+                                <!option value="Declined" @(currentStatus == "Declined" ? "selected" : "")>Declined</!option>
+                            </select>
+                            <button type="submit" class="btn btn-primary mt-2">Save</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p><strong>Status:</strong> @pnm.pnm_status</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Picture Column -->
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header">
+                    <strong>Profile Picture</strong>
+                </div>
+                <div class="card-body text-center">
+
+                    <form asp-action="UpdateProfilePicture" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="pnm_id" value="@pnm.pnm_id" />
+
+                        @if (ViewData["S3ProfilePictureUrl"] != null)
+                        {
+                            <img src="@ViewData["S3ProfilePictureUrl"]" alt="Profile Picture" style="max-height:200px;" class="mb-3 rounded" />
+                        }
+                        else
+                        {
+                            <img src="/images/default_avatar.jpg" style="width:120px;height:120px;" alt="No Profile" class="mb-3 rounded" />
+                        }
+
+
+                        @if (isAdmin)
+                        {
+                            <div class="mb-2">
+                                <label for="newProfilePicture" class="form-label">Change Profile Picture:</label>
+                                <input type="file" id="newProfilePicture" name="newProfilePicture" accept="image/*" class="form-control" />
+                            </div>
+                            <button type="submit" class="btn btn-secondary">Upload</button>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <!-- Voting Sessions -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+            <h4 class="mb-0">Voting Sessions</h4>
+        </div>
+        <div class="card-body">
+
+            @if (isAdmin)
+            {
+                <div class="mb-3">
+                    <form asp-action="OpenVoting" method="post" style="display:inline-block; margin-right: 10px;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="pnm_id" value="@pnm.pnm_id" />
+                        <button type="submit" class="btn btn-success">
+                            Start a New Voting Session
+                        </button>
+                    </form>
+
+                    <!-- Generate Vote QR code -->
+                    @{
+                        var openSession = sessions.FirstOrDefault(s => s.voting_open_yn);
+                        if (openSession != null)
+                        {
+                            var voteUrl = Url.Action("Vote", "PNM", new { pnm_id = pnm.pnm_id }, protocol: Context.Request.Scheme);
+                            var encodedUrl = Uri.EscapeDataString(voteUrl);
+
+                            <div style="display:inline-block; margin-right: 10px;">
+                                <label class="fw-bold d-block">Scan to Vote:</label>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?data=@encodedUrl&size=150x150"
+                                     alt="Vote QR Code" />
+                                <p class="small text-muted">@voteUrl</p>
+                            </div>
+
+                            <form asp-action="CloseVoting" method="post" style="display:inline-block;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="pnm_id" value="@pnm.pnm_id" />
+                                <button type="submit" class="btn btn-warning">
+                                    Close Voting
+                                </button>
+                            </form>
+                        }
+                    }
+
+                </div>
+            }
+
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Opened</th>
+                        <th>Closed</th>
+                        <th>Yes</th>
+                        <th>No</th>
+                        <th>Yes %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (sessions.Any())
+                    {
+                        @foreach (var session in sessions)
+                        {
+                            <tr>
+                                <td>@session.session_open_dt</td>
+                                <td>@(session.session_close_dt.HasValue ? session.session_close_dt.Value.ToString() : "Still Open")</td>
+                                <td>@session.yes_count</td>
+                                <td>@session.no_count</td>
+                                <td>
+                                    @if ((session.yes_count + session.no_count) == 0)
+                                    {
+                                        <text>---</text>
+                                    }
+                                    else
+                                    {
+                                        var ratio = (session.yes_count / (double)(session.yes_count + session.no_count)) * 100;
+                                        <text>@ratio.ToString("F1")%</text>
+                                    }
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center">No voting sessions yet.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Comments -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+            <h4 class="mb-0">Comments</h4>
+        </div>
+        <div class="card-body">
+            @if (comments.Any())
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var comment in comments)
+                    {
+                        <li class="list-group-item">
+                            <strong>@comment.comment_dt.ToShortDateString() @comment.comment_dt.ToShortTimeString()</strong>
+                            <p class="mb-1">@comment.comment_text</p>
+                            <span class="text-muted">- @comment.comment_author_name</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No comments yet. Be the first!</p>
+            }
+
+            <hr />
+            <h5>Leave a Comment</h5>
+            <form asp-action="SubmitComment" asp-controller="PNM" asp-route-pnm_id="@pnm.pnm_id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <textarea name="comment_text" class="form-control" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+    <div class="text-end mt-4">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-dark">
+            ← Back to Home
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var isAppleDevice = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+        var phoneInput = document.getElementById("pnmPhoneInput");
+        var container = document.getElementById("macSMSButtonContainer");
+
+        if (isAppleDevice && phoneInput && container) {
+            var phone = phoneInput.value.trim();
+            var sanitized = phone.replace(/[^0-9+]/g, "");
+
+            if (sanitized.length > 0) {
+                var button = document.createElement("a");
+                button.href = "sms:" + sanitized;
+                button.textContent = "Send Message";
+                button.className = "btn btn-outline-primary btn-sm ms-2";
+                container.appendChild(button);
+            }
+        }
+    });
+</script>
