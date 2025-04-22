@@ -83,10 +83,10 @@
 
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle rounded-circle p-2"
-                    type="button"
-                    id="userMenuButton"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
+            type="button"
+            id="userMenuButton"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
                 @User.Identity?.Name?.Substring(0, 1).ToUpper()
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
@@ -122,18 +122,28 @@
 }
 
 <div class="container my-4">
-    <h2 class="mb-4">Interview Calendar</h2>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="mb-0">Interview Calendar</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">← Back to Home</a>
+            @if (isAdmin)
+            {
+                <a asp-controller="Interview" asp-action="Schedule" class="btn btn-primary">Schedule Interview</a>
+                <form id="cancelForm" method="post" asp-controller="Interview" asp-action="Cancel" class="d-inline">
+                    @Html.AntiForgeryToken()
+                <input type="hidden" id="cancelInterviewId" name="interview_id" />
+                <button type="submit" class="btn btn-danger d-none" id="cancelBtn">Cancel Selected Interview</button>
+            </form>
+            }
+        </div>
+    </div>
+
+    
 
     <div id="calendar"></div>
 
-    <div class="d-flex justify-content-between mt-4">
-        <a asp-controller="Interview" asp-action="Schedule" class="btn btn-primary">Schedule Interview</a>
-        <form id="cancelForm" method="post" asp-controller="Interview" asp-action="Cancel">
-            <input type="hidden" id="cancelInterviewId" name="interview_id" />
-            <button type="submit" class="btn btn-danger d-none" id="cancelBtn">Cancel Selected Interview</button>
-        </form>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">← Back to Home</a>
-    </div>
+   
 
 
 </div>

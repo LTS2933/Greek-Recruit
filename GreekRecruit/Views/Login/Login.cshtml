@@ -32,10 +32,6 @@
 
             <form asp-controller="Login" asp-action="SubmitData" method="POST" class="mt-4">
                 @Html.AntiForgeryToken()
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="text" id="email" asp-for="email" class="form-control" autofocus />
-                </div>
 
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>

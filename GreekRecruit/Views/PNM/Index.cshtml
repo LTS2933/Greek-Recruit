@@ -129,7 +129,11 @@
 
 <!-- Main Container -->
 <div class="container my-4">
-    <h2 class="mb-4">@pnm.pnm_fname @pnm.pnm_lname</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-4">@pnm.pnm_fname @pnm.pnm_lname</h2>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mb-3">← Back to Home</a>
+    </div>
+    
 
     <!-- Row for PNM Info & Profile Picture -->
     <div class="row">
@@ -417,11 +421,7 @@
             </form>
         </div>
     </div>
-    <div class="text-end mt-4">
-        <a asp-controller="Home" asp-action="Index" class="btn btn-dark">
-            ← Back to Home
-        </a>
-    </div>
+    
 </div>
 
 <script>

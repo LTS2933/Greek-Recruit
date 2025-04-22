@@ -3,6 +3,7 @@ using GreekRecruit.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using GreekRecruit.Services;
+using Microsoft.AspNetCore.Authentication;
 
 
 namespace GreekRecruit.Controllers;
@@ -181,6 +182,14 @@ public class InterestFormController : Controller
     public IActionResult ThankYou()
     {
         return View();
+    }
+
+    //Logout
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync("MyCookieAuth");
+        return RedirectToAction("Login", "Login");
     }
 }
 

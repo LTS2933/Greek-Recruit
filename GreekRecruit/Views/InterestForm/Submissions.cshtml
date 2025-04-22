@@ -121,7 +121,12 @@
 }
 
 <div class="container my-4">
-    <h2>Submissions for: <strong>@ViewData["FormName"]</strong></h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Submissions for: <strong>@ViewData["FormName"]</strong></h2>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mb-3">← Back to Home</a>
+
+    </div>
+
 
     @if (!Model.Any())
     {
@@ -176,6 +181,7 @@
     <div class="mt-4">
         <a asp-action="Index" class="btn btn-secondary">← Back to Forms</a>
     </div>
+
 </div>
 
 

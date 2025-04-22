@@ -129,7 +129,11 @@
 }
 
 <div class="container my-4">
-    <h2 class="mb-4">Stats & Insights</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-4">Stats & Insights</h2>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mb-3">← Back to Home</a>
+    </div>
+    
 
     <div class="row g-4">
         <div class="col-md-3">
@@ -254,7 +258,5 @@
     </table>
 
    
-    <div class="text-end mt-4">
-        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">← Back to Home</a>
-    </div>
+   
 </div>

@@ -118,7 +118,7 @@ namespace GreekRecruit.Controllers
                         //_context.SaveChanges();
 
                         mail.Subject = "Join GreekRecruit!";
-                        mail.Body = $"You've been invited to join GreekRecruit by your admin, {current_user.full_name}.\nYou can now log in using this email.\nUsername: {user.username}\nPassword: {user.password}" +
+                        mail.Body = $"You've been invited to join GreekRecruit by your admin, {current_user.full_name}.\nYou can now log in using these credentials.\nUsername: {user.username}\nPassword: {user.password}" +
                         "\nFor security reasons, please reset your password. You can do so by clicking the Settings button in your profile dropdown.";
 
                         var smtpClient = new SmtpClient(smtpServer)

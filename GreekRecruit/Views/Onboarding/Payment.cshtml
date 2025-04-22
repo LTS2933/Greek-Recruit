@@ -1,0 +1,12 @@
+﻿@{
+    ViewData["Title"] = "Payment";
+}
+
+<div class="container text-center my-5">
+    <h2>Subscribe to Get Started</h2>
+    <p>Payment integration coming soon. For now, click below to simulate payment.</p>
+    <form asp-action="ConfirmPayment" method="post">
+        @Html.AntiForgeryToken()
+        <button class="btn btn-primary">Confirm Payment</button>
+    </form>
+</div>

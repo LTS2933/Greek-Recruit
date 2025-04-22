@@ -34,11 +34,11 @@ namespace GreekRecruit.Controllers
         public async Task<IActionResult> SubmitDataAsync(User model)
         {
             var uname = model.username;
-            var email = model.email;
+            //var email = model.email;
             var enteredPassword = model.password;
 
             // Try to find a user by username and email
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == uname && u.email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == uname);
             if (user == null)
             {
                 TempData["ErrorMessage"] = "Invalid credentials!";
@@ -86,5 +86,9 @@ namespace GreekRecruit.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        //public IActionResult Logout()
+        //{
+        //    return View("Login");
+        //}
     }
 }
