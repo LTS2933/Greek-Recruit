@@ -1,12 +1,121 @@
 ﻿@{
-    ViewData["Title"] = "Payment";
+    ViewData["Title"] = "Secure Payment";
+    var orgName = ViewData["OrgName"] as string;
+    var adminEmail = ViewData["AdminEmail"] as string;
+    var stripePublicKey = ViewData["PublishableKey"] as string;
 }
 
-<div class="container text-center my-5">
-    <h2>Subscribe to Get Started</h2>
-    <p>Payment integration coming soon. For now, click below to simulate payment.</p>
-    <form asp-action="ConfirmPayment" method="post">
-        @Html.AntiForgeryToken()
-        <button class="btn btn-primary">Confirm Payment</button>
-    </form>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+<script src="https://js.stripe.com/v3/"></script>
+
+<style>
+    .spinner-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+    }
+
+        .spinner-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="text-center mb-3">Complete Your Payment</h2>
+            <p class="text-muted text-center mb-4">
+                You're signing up your organization: <strong>@orgName</strong><br />
+                Confirmation will be sent to <strong>@adminEmail</strong>
+            </p>
+
+            <form id="payment-form" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label">Card Details</label>
+                    <div id="card-element" class="form-control p-2"></div>
+                    <div id="card-errors" class="text-danger mt-2"></div>
+                </div>
+
+                <input type="hidden" id="orgName" value="@orgName" />
+                <input type="hidden" id="adminEmail" value="@adminEmail" />
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">Submit Payment</button>
+                </div>
+            </form>
+
+            <div class="text-center mt-3">
+                <a asp-action="Start" class="btn btn-link">← Back</a>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="spinner-overlay" id="spinner">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Processing...</span>
+    </div>
+</div>
+
+<script>
+    const stripe = Stripe("@stripePublicKey");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    const form = document.getElementById("payment-form");
+    const errorDisplay = document.getElementById("card-errors");
+    const spinner = document.getElementById("spinner");
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        document.getElementById("submit-btn").disabled = true;
+        spinner.classList.add('show');
+
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+            type: "card",
+            card: card,
+            billing_details: { email: document.getElementById("adminEmail").value }
+        });
+
+        if (error) {
+            errorDisplay.textContent = error.message;
+            document.getElementById("submit-btn").disabled = false;
+            spinner.classList.remove('show');
+        } else {
+            const hiddenForm = document.createElement("form");
+            hiddenForm.method = "POST";
+            hiddenForm.action = "/Onboarding/CreateSubscription";
+
+            const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            hiddenForm.innerHTML = `
+                <input type="hidden" name="__RequestVerificationToken" value="${csrfToken}">
+                <input type="hidden" name="paymentMethodId" value="${paymentMethod.id}">
+                <input type="hidden" name="orgName" value="${document.getElementById('orgName').value}">
+                <input type="hidden" name="adminEmail" value="${document.getElementById('adminEmail').value}">
+            `;
+
+            document.body.appendChild(hiddenForm);
+            hiddenForm.submit();
+        }
+    });
+</script>

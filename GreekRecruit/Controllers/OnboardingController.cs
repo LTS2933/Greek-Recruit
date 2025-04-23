@@ -1,39 +1,67 @@
-﻿using GreekRecruit.Models;
+﻿using GreekRecruit.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace GreekRecruit.Controllers
 {
     public class OnboardingController : Controller
     {
+        private readonly StripeService _stripeService;
+
+        public OnboardingController(StripeService stripeService)
+        {
+            _stripeService = stripeService;
+        }
+
         [HttpGet]
         public IActionResult Start()
         {
             return View();
         }
 
-        [HttpGet]
-        public IActionResult Payment()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Start(string orgName, string adminEmail)
         {
-            return View(); // Payment form or Stripe integration
+            if (string.IsNullOrWhiteSpace(orgName) || string.IsNullOrWhiteSpace(adminEmail))
+            {
+                TempData["ErrorMessage"] = "Organization name and email are required.";
+                return RedirectToAction("Start");
+            }
+
+            ViewData["OrgName"] = orgName;
+            ViewData["AdminEmail"] = adminEmail;
+            ViewData["PublishableKey"] = Environment.GetEnvironmentVariable("Stripe__PublishableKey");
+            var stripeKey = Environment.GetEnvironmentVariable("Stripe__PublishableKey");
+            Console.WriteLine($"Stripe Publishable Key: {stripeKey}");
+
+            return View("Payment");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ConfirmPayment(string orgName, string adminEmail)
+        public async Task<IActionResult> CreateSubscription(string orgName, string adminEmail, string paymentMethodId)
         {
-            // TODO: Add payment confirmation logic here (e.g., via Stripe webhook or client call)
+            try
+            {
+                var subscriptionId = await _stripeService.CreateSubscriptionAsync(orgName, adminEmail, paymentMethodId);
 
-            // Optionally save interest to DB or email
-            // Could also log this to a table or send a notification
+                // Log subscriptionId, orgName, and adminEmail to database if needed
 
-            TempData["SuccessMessage"] = "Thanks! We'll be in touch shortly to get your organization set up.";
-            return RedirectToAction("Success");
+                TempData["SuccessMessage"] = "Thanks! We’ll be in touch shortly to get your organization set up.";
+                return RedirectToAction("Success");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error: {ex.Message}";
+                return RedirectToAction("Start");
+            }
         }
 
         [HttpGet]
         public IActionResult Success()
         {
-            return View(); // Success message view
+            return View();
         }
     }
 }

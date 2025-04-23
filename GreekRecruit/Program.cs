@@ -11,6 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 /// Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<StripeService>();
+
 
 var rawConnStr = builder.Configuration.GetConnectionString("Sql");
 var sqlPassword = Environment.GetEnvironmentVariable("SQL_PASSWORD");
