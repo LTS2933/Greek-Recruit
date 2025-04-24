@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System.Text.RegularExpressions;
+using GreekRecruit.Services;
 
 
 namespace GreekRecruit.Controllers
@@ -17,11 +18,13 @@ namespace GreekRecruit.Controllers
     {
         private readonly SqlDataContext _context;
         private readonly IConfiguration _configuration;
+        private readonly StripeService _stripeService;
 
-        public ProfileController(SqlDataContext context, IConfiguration configuration)
+        public ProfileController(SqlDataContext context, IConfiguration configuration, StripeService stripeService)
         {
             _context = context;
             _configuration = configuration;
+            _stripeService = stripeService;
         }
 
         //Profile view of a user, showing basic credentials
@@ -65,6 +68,11 @@ namespace GreekRecruit.Controllers
             var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
             if (curr_user == null) return Unauthorized();
             if (curr_user.role != "Admin") return Forbid();
+
+            if (email == null ||  full_name == null){
+                TempData["ErrorMessage"] = "Email and full name are required!";
+                return RedirectToAction("AddUsers");
+            }
 
             if (await _context.Users.AnyAsync(u => u.email == email))
             {
@@ -219,6 +227,39 @@ namespace GreekRecruit.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> CancelSubscription()
+        {
+            var username = User.Identity?.Name;
+            var user = _context.Users.FirstOrDefault(u => u.username == username);
+
+            if (user == null) return Unauthorized();
+            if (string.IsNullOrEmpty(user.SubscriptionId))
+            {
+                TempData["ErrorMessage"] = "Unable to cancel subscription.";
+                return RedirectToAction("Index");
+            }
+            if (user.role != "Admin") return Forbid();
+
+            try
+            {
+                await _stripeService.CancelSubscriptionAsync(user.SubscriptionId);
+
+                // Optionally update DB to reflect cancellation
+                user.SubscriptionId = null;
+                _context.SaveChanges();
+
+                TempData["SuccessMessage"] = "Your subscription has been successfully cancelled.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Cancellation failed: " + ex.Message;
+            }
+
+            return RedirectToAction("Index");
+        }
 
 
         //Logout

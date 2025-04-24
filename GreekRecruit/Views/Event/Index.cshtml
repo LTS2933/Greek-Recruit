@@ -91,28 +91,53 @@
     </div>
 
 
-    <div class="d-flex align-items-center gap-2">
+    <style>
+        @@media (max-width: 576px) {
+            #userMenuButton {
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+                padding: 0.4rem;
+            }
 
+            .navbar-brand span {
+                font-size: 1rem;
+            }
 
+            .navbar .dropdown-toggle::after {
+                display: none;
+            }
+        }
+
+        #userMenuButton {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+    </style>
+
+    <div class="d-flex align-items-center ms-auto">
         <div class="dropdown">
-            <button class="btn btn-secondary dropdown-toggle rounded-circle p-2"
-                    type="button"
-                    id="userMenuButton"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
+            <button class="btn dropdown-toggle" type="button" id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                 @User.Identity?.Name?.Substring(0, 1).ToUpper()
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
-                <li><a asp-controller="Profile" asp-action="Index" class="dropdown-item">Profile</a></li>
-                <li><a asp-controller="Dashboard" asp-action="Index" class="dropdown-item">Stats & Insights</a></li>
-                @{
-                    if (isAdmin)
-                    {
-                        <li><a asp-controller="Profile" asp-action="AddUsers" class="dropdown-item">Add Users</a></li>
-                        <li><a asp-controller="AdminTask" asp-action="Index" class="dropdown-item">View Tasks</a></li>
-                    }
+                <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profile</a></li>
+                <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Stats & Insights</a></li>
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="AddUsers">Add Users</a></li>
+                    <li><a class="dropdown-item" asp-controller="AdminTask" asp-action="Index">View Tasks</a></li>
                 }
-                <li><a asp-action="Logout" class="btn btn-primary">Logout</a></li>
+                <li><a asp-action="Logout" class="dropdown-item text-danger">Logout</a></li>
             </ul>
         </div>
     </div>

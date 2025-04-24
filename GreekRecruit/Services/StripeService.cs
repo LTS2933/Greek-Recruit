@@ -81,4 +81,18 @@ public class StripeService
             }
         });
     }
+
+
+    public async Task CancelSubscriptionAsync(string subscriptionId)
+    {
+        var service = new SubscriptionService();
+
+        // Cancel at period end
+        await service.UpdateAsync(subscriptionId, new SubscriptionUpdateOptions
+        {
+            CancelAtPeriodEnd = true
+        });
+
+    }
+
 }

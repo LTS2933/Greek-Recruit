@@ -1,13 +1,8 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "Home";
     var selectedStatus = Context.Request.Query["status"].ToString();
-
-
 }
 @model List<GreekRecruit.Models.PNM>
-
-
 
 @{
     var username = User.Identity?.Name;
@@ -23,6 +18,55 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<style>
+    body {
+        background: #f4f6f9;
+    }
+
+    .navbar {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+        font-weight: 700;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .table th {
+        background-color: #e9ecef;
+        font-weight: 600;
+    }
+
+    .table-bordered td, .table-bordered th {
+        vertical-align: middle;
+    }
+
+    .form-label {
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        font-weight: 600;
+    }
+
+    .btn-outline-primary {
+        font-weight: 600;
+    }
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid #f1f1f1;
+    }
+</style>
 
 
 <nav class="navbar navbar-light bg-light p-3 d-flex justify-content-between">
@@ -91,31 +135,60 @@
     </div>
 
 
-    <div class="d-flex align-items-center gap-2">
+    <style>
+        @@media (max-width: 576px) {
+            #userMenuButton
 
+        {
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+            padding: 0.4rem;
+        }
 
+        .navbar-brand span {
+            font-size: 1rem;
+        }
+
+        .navbar .dropdown-toggle::after {
+            display: none;
+        }
+
+        }
+
+        #userMenuButton {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+    </style>
+
+    <div class="d-flex align-items-center ms-auto">
         <div class="dropdown">
-            <button class="btn btn-secondary dropdown-toggle rounded-circle p-2"
-                    type="button"
-                    id="userMenuButton"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
+            <button class="btn dropdown-toggle" type="button" id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                 @User.Identity?.Name?.Substring(0, 1).ToUpper()
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
-                <li><a asp-controller="Profile" asp-action="Index" class="dropdown-item">Profile</a></li>
-                <li><a asp-controller="Dashboard" asp-action="Index" class="dropdown-item">Stats & Insights</a></li>
-                @{
-                    if (isAdmin)
-                    {
-                        <li><a asp-controller="Profile" asp-action="AddUsers" class="dropdown-item">Add Users</a></li>
-                        <li><a asp-controller="AdminTask" asp-action="Index" class="dropdown-item">View Tasks</a></li>
-                    }
+                <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profile</a></li>
+                <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Stats & Insights</a></li>
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="AddUsers">Add Users</a></li>
+                    <li><a class="dropdown-item" asp-controller="AdminTask" asp-action="Index">View Tasks</a></li>
                 }
-                <li><a asp-action="Logout" class="btn btn-primary">Logout</a></li>
+                <li><a asp-action="Logout" class="dropdown-item text-danger">Logout</a></li>
             </ul>
         </div>
     </div>
+
 </nav>
 
 @if (TempData["SuccessMessage"] != null)

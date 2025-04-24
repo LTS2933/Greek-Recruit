@@ -1,5 +1,7 @@
-﻿using GreekRecruit.Services;
+﻿using GreekRecruit.Models;
+using GreekRecruit.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 namespace GreekRecruit.Controllers
@@ -7,10 +9,12 @@ namespace GreekRecruit.Controllers
     public class OnboardingController : Controller
     {
         private readonly StripeService _stripeService;
+        private readonly SqlDataContext _context;
 
-        public OnboardingController(StripeService stripeService)
+        public OnboardingController(StripeService stripeService, SqlDataContext context)
         {
             _stripeService = stripeService;
+            _context = context;
         }
 
         [HttpGet]
@@ -47,6 +51,25 @@ namespace GreekRecruit.Controllers
                 var subscriptionId = await _stripeService.CreateSubscriptionAsync(orgName, adminEmail, paymentMethodId);
 
                 // Log subscriptionId, orgName, and adminEmail to database if needed
+                var user = _context.Users.FirstOrDefault(u => u.email == adminEmail);
+                if (user != null)
+                {
+                    user.SubscriptionId = subscriptionId;
+                }
+                else
+                {
+                    // If the user doesn't exist yet, create them
+                    _context.Users.Add(new User
+                    {
+                        username = adminEmail.Split('@')[0], // or however you want to format
+                        email = adminEmail,
+                        SubscriptionId = subscriptionId,
+                        role = "Admin",
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
 
                 TempData["SuccessMessage"] = "Thanks! We’ll be in touch shortly to get your organization set up.";
                 return RedirectToAction("Success");

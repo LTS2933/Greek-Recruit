@@ -19,9 +19,11 @@ namespace GreekRecruit.Models
 
         public string? is_hashed_passowrd { get; set; }
 
-        public string full_name { get; set; }
+        public string? full_name { get; set; }
         public String? email { get; set; }
 
         public String role { get; set; } = "User";
+
+        public string? SubscriptionId { get; set; }
     }
 }
