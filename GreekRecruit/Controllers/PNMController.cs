@@ -439,6 +439,23 @@ namespace GreekRecruit.Controllers
             return View(pnms);
         }
 
+        [Authorize]
+        [HttpPost]        
+        public async Task<IActionResult> MarkTexted(int pnm_id)
+        {
+            var username = User.Identity?.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
+            if (user == null) return Unauthorized();
+
+            var pnm = await _context.PNMs.FirstOrDefaultAsync(p => p.pnm_id == pnm_id && p.organization_id == user.organization_id);
+            if (pnm == null) return NotFound();
+
+            pnm.have_texted = "Yes";
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Index", new { pnm_id });
+
+        }
 
         //Logout
         [Authorize]

@@ -25,5 +25,7 @@ namespace GreekRecruit.Models
         public String role { get; set; } = "User";
 
         public string? SubscriptionId { get; set; }
+
+        public string? have_texted { get; set; } = "No";
     }
 }

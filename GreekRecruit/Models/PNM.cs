@@ -30,5 +30,7 @@ namespace GreekRecruit.Models
 
         public string? pnm_profilepictureurl { get; set; }
 
+        public string? have_texted { get; set; } = "No";
+
     }
 }

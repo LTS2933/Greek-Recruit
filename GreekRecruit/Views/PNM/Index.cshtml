@@ -465,6 +465,24 @@
                 button.textContent = "Send Message";
                 button.className = "btn btn-outline-primary btn-sm ms-2";
                 container.appendChild(button);
+                button.onclick = function () {
+                    fetch(`/PNM/MarkTexted?pnm_id=${encodeURIComponent(phoneInput.dataset.pnmId)}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+                };
+                container.appendChild(button);
+
+                var haveTexted = phoneInput.dataset.haveTexted;
+                if (haveTexted === "Yes") {
+                    var message = document.createElement("p");
+                    message.className = "text-muted small mt-1 mb-0";
+                    message.textContent = "You may have texted this PNM before.";
+                    container.appendChild(message);
+                }
+
             }
         }
     });

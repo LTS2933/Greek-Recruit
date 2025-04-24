@@ -44,8 +44,18 @@ namespace GreekRecruit.Controllers
                 TempData["ErrorMessage"] = "Invalid credentials!";
                 return View("Login");
             }
+            if (uname == null)
+            {
+                TempData["ErrorMessage"] = "Invalid credentials!";
+                return View("Login");
+            }
+            if (enteredPassword == null)
+            {
+                TempData["ErrorMessage"] = "Invalid credentials!";
+                return View("Login");
+            }
 
-            bool isPasswordValid;
+                bool isPasswordValid;
 
             if (user.is_hashed_passowrd == "Y") // Note: consider renaming to is_hashed_password in the DB later
             {
