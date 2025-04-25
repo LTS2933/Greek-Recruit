@@ -3,6 +3,149 @@
 @{
     ViewData["Title"] = "Mass Text";
 }
+@{
+    var username = User.Identity?.Name;
+    var context = Context.RequestServices.GetService(typeof(SqlDataContext)) as SqlDataContext;
+    var user = context?.Users.FirstOrDefault(u => u.username == username);
+    bool isAdmin = false;
+    if (user?.role == "Admin")
+    {
+        isAdmin = true;
+    }
+}
+<!-- Bootstrap -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<form id="tokenForm">@Html.AntiForgeryToken()</form>
+
+<nav class="navbar navbar-light bg-light p-3 d-flex justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+        <a asp-controller="Home" asp-action="Index" class="navbar-brand d-flex align-items-center">
+            <img src="/images/greekrecruit_logo.png" alt="Home" width="40" height="40" class="d-inline-block align-top">
+            <span class="ms-2">Home</span>
+        </a>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="eventsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Events
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="eventsDropdown">
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="AddEvent" asp-action="Index">Add Event</a></li>
+                }
+                <li><a class="dropdown-item" asp-controller="Event" asp-action="Index">View Events</a></li>
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="pnmsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                PNMs
+            </button>
+            <ul class="dropdown-menu" style="white-space: nowrap; min-width: max-content;" aria-labelledby="pnmsDropdown">
+
+                <li><a class="dropdown-item" asp-controller="AddPNM" asp-action="Index">Add PNM</a></li>
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="AddPNM" asp-action="AddPNMCSV">Import PNMs from CSV</a></li>
+                }
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="formsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Interest Forms
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="formsDropdown">
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="InterestForm" asp-action="Create">Add Interest Form</a></li>
+                }
+                <li><a class="dropdown-item" asp-controller="InterestForm" asp-action="Index">View Forms/Submissions</a></li>
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="interviewsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Interviews
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="interviewsDropdown">
+                <li><a class="dropdown-item" asp-controller="Interview" asp-action="Index">View Interview Schedule</a></li>
+            </ul>
+        </div>
+
+    </div>
+
+
+    <style>
+        @@media (max-width: 576px) {
+            #userMenuButton {
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+                padding: 0.4rem;
+            }
+
+            .navbar-brand span {
+                font-size: 1rem;
+            }
+
+            .navbar .dropdown-toggle::after {
+                display: none;
+            }
+        }
+
+        #userMenuButton {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+    </style>
+
+    <div class="d-flex align-items-center ms-auto">
+        <div class="dropdown">
+            <button class="btn dropdown-toggle" type="button" id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                @User.Identity?.Name?.Substring(0, 1).ToUpper()
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
+                <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profile</a></li>
+                <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Stats & Insights</a></li>
+                @if (isAdmin)
+                {
+                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="AddUsers">Add Users</a></li>
+                    <li><a class="dropdown-item" asp-controller="AdminTask" asp-action="Index">View Tasks</a></li>
+                }
+                <li><a asp-action="Logout" class="dropdown-item text-danger">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+
+</nav>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 
 <div class="container mt-5">
     <h2>Send a Mass Text</h2>
@@ -26,7 +169,8 @@
                     <span class="me-3 text-muted">(@pnm.pnm_phone)</span>
                     <a class="btn btn-outline-primary btn-sm send-btn"
                        data-phone="@pnm.pnm_phone"
-                       data-name="@pnm.pnm_fname">
+                       data-name="@pnm.pnm_fname"
+                        data-id="@pnm.pnm_id">
                         Send
                     </a>
                 </div>
@@ -43,6 +187,7 @@
         sendButtons.forEach(button => {
             button.addEventListener("click", function () {
                 const phone = button.getAttribute("data-phone");
+                const pnmId = button.getAttribute("data-id");
                 const message = encodeURIComponent(messageBox.value.trim());
 
                 if (!message) {
@@ -52,6 +197,21 @@
 
                 const smsLink = `sms:${phone}?&body=${message}`;
                 window.location.href = smsLink;
+
+                fetch(`/PNM/MarkTexted`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify({ pnm_id: parseInt(pnmId) })
+                }).catch(console.error);
+
+                button.disabled = true;
+                button.textContent = "Text Sent!";
+                button.classList.remove("btn-outline-primary");
+                button.classList.add("btn-success");
+
             });
         });
     });

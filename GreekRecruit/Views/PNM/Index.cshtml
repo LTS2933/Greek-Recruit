@@ -152,6 +152,11 @@
     </div>
 }
 
+<form id="tokenForm">
+    @Html.AntiForgeryToken()
+</form>
+
+
 <!-- Main Container -->
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -182,7 +187,7 @@
                             <div class="mb-2">
                                 <label>Phone</label>
                                 <div class="d-flex align-items-center">
-                                    <input type="text" id="pnmPhoneInput" name="pnm_phone" value="@pnm.pnm_phone" class="form-control" />
+                                    <input type="text" id="pnmPhoneInput" name="pnm_phone" value="@pnm.pnm_phone" class="form-control" data-have-texted="@pnm.have_texted" />
                                     <div id="macSMSButtonContainer" class="ms-2"></div>
                                 </div>
                             </div>
@@ -464,22 +469,26 @@
                 button.href = "sms:" + sanitized;
                 button.textContent = "Send Message";
                 button.className = "btn btn-outline-primary btn-sm ms-2";
+
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                var pnmId = @pnm.pnm_id;
+
                 container.appendChild(button);
                 button.onclick = function () {
-                    fetch(`/PNM/MarkTexted?pnm_id=${encodeURIComponent(phoneInput.dataset.pnmId)}`, {
+                    fetch(`/PNM/MarkTexted?pnm_id=${encodeURIComponent(pnmId)}`, {
+
                         method: 'POST',
                         headers: {
-                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            'RequestVerificationToken': token
                         }
                     });
                 };
-                container.appendChild(button);
 
                 var haveTexted = phoneInput.dataset.haveTexted;
                 if (haveTexted === "Yes") {
                     var message = document.createElement("p");
                     message.className = "text-muted small mt-1 mb-0";
-                    message.textContent = "You may have texted this PNM before.";
+                    message.textContent = "You have clicked 'Send Message' for this PNM before.";
                     container.appendChild(message);
                 }
 

@@ -440,7 +440,8 @@ namespace GreekRecruit.Controllers
         }
 
         [Authorize]
-        [HttpPost]        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkTexted(int pnm_id)
         {
             var username = User.Identity?.Name;
@@ -453,7 +454,7 @@ namespace GreekRecruit.Controllers
             pnm.have_texted = "Yes";
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Index", new { pnm_id });
+            return Ok();
 
         }
 
