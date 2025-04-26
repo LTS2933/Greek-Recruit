@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using GreekRecruit.Services;
+using System.Net;
+using System.Net.Mail;
+using GreekRecruit.DTOs;
 
 namespace GreekRecruit.Controllers
 {
@@ -17,11 +20,13 @@ namespace GreekRecruit.Controllers
     {
         private readonly SqlDataContext _context;
         private readonly S3Service _s3Service;
+        private readonly IConfiguration _configuration;
 
-        public PNMController(SqlDataContext context, S3Service s3Service) // add S3Service here
+        public PNMController(SqlDataContext context, S3Service s3Service, IConfiguration configuration  ) // add S3Service here
         {
             _context = context;
             _s3Service = s3Service;
+            _configuration = configuration;
         }
 
         //Returns the View for the given PNM we are on
@@ -458,8 +463,100 @@ namespace GreekRecruit.Controllers
 
         }
 
-        //Logout
+        //Handles view for mass emailing
+        [HttpGet]
         [Authorize]
+        public async Task<IActionResult> MassEmail()
+        {
+            var curr_user_uname = User.Identity?.Name;
+            var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
+            if (curr_user == null) return Unauthorized();
+            if (curr_user.role != "Admin") return Forbid();
+
+            var pnms = await _context.PNMs
+                .Where(p => p.organization_id == curr_user.organization_id) // Only show PNMs for the user's organization
+                .OrderBy(p => p.pnm_fname)
+                .ToListAsync();
+
+            return View(pnms);
+        }
+
+
+    // Handles mass emailing to PNMs
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendMassEmail([FromBody] MassEmailRequest request)
+    {
+        var curr_user_uname = User.Identity?.Name;
+        var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
+        if (curr_user == null) return Unauthorized();
+        if (curr_user.role != "Admin") return Forbid();
+
+        if (request == null || string.IsNullOrEmpty(request.Subject) || string.IsNullOrEmpty(request.Message) || request.Recipients == null || !request.Recipients.Any())
+        {
+                TempData["ErrorMessage"] = "You must include a subject, a message, and recipients to send to.";
+                return RedirectToAction("MassEmail");
+            }
+
+        try
+        {
+            var emailSettings = _configuration.GetSection("EmailSettings");
+            var smtpServer = emailSettings["SmtpServer"];
+            var port = int.Parse(emailSettings["Port"]);
+            var username = Environment.GetEnvironmentVariable("SMTP_USER");
+            var password = Environment.GetEnvironmentVariable("SMTP_KEY");
+
+            var mail = new MailMessage();
+            mail.From = new MailAddress(username);
+            mail.Subject = request.Subject;
+            mail.Body = request.Message;
+            mail.IsBodyHtml = false;
+
+            foreach (var email in request.Recipients)
+            {
+                if (MailAddress.TryCreate(email, out _))
+                {
+                    mail.Bcc.Add(email);
+                }
+            }
+
+            if (!mail.Bcc.Any())
+            {
+                    TempData["ErrorMessage"] = "No valid recipient emails were provided.";
+                    return RedirectToAction("MassEmail");
+                }
+
+            var smtpClient = new SmtpClient(smtpServer)
+            {
+                Port = port,
+                Credentials = new NetworkCredential(username, password),
+                EnableSsl = true,
+            };
+
+            try
+            {
+                await smtpClient.SendMailAsync(mail);
+                    TempData["SuccessMessage"] = "Mass email sent to recipients!";
+                    //return RedirectToAction("MassEmail");
+                    return Ok();
+                }
+            catch (Exception sendEx)
+            {
+                TempData["ErrorMessage"] = $"Error sending mass email: {sendEx.Message}";
+                return RedirectToAction("MassEmail");
+            }
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Unexpected error: {ex.Message}";
+            return RedirectToAction("MassEmail");
+        }
+    }
+
+
+    //Logout
+    [Authorize]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync("MyCookieAuth");
