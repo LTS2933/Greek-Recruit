@@ -481,82 +481,92 @@ namespace GreekRecruit.Controllers
             return View(pnms);
         }
 
-
-    // Handles mass emailing to PNMs
-    [HttpPost]
-    [Authorize]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendMassEmail([FromBody] MassEmailRequest request)
-    {
-        var curr_user_uname = User.Identity?.Name;
-        var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
-        if (curr_user == null) return Unauthorized();
-        if (curr_user.role != "Admin") return Forbid();
-
-        if (request == null || string.IsNullOrEmpty(request.Subject) || string.IsNullOrEmpty(request.Message) || request.Recipients == null || !request.Recipients.Any())
+        // Handles mass emailing to PNMs
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMassEmail([FromBody] MassEmailRequest request)
         {
+            var curr_user_uname = User.Identity?.Name;
+            var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
+            if (curr_user == null) return Unauthorized();
+            if (curr_user.role != "Admin") return Forbid();
+
+            if (request == null || string.IsNullOrEmpty(request.Subject) || string.IsNullOrEmpty(request.Message) || request.Recipients == null || !request.Recipients.Any())
+            {
                 TempData["ErrorMessage"] = "You must include a subject, a message, and recipients to send to.";
                 return RedirectToAction("MassEmail");
             }
 
-        try
-        {
-            var emailSettings = _configuration.GetSection("EmailSettings");
-            var smtpServer = emailSettings["SmtpServer"];
-            var port = int.Parse(emailSettings["Port"]);
-            var username = Environment.GetEnvironmentVariable("SMTP_USER");
-            var password = Environment.GetEnvironmentVariable("SMTP_KEY");
-
-            var mail = new MailMessage();
-            mail.From = new MailAddress(username);
-            mail.Subject = request.Subject;
-            mail.Body = request.Message;
-            mail.IsBodyHtml = false;
-
-            foreach (var email in request.Recipients)
+            var organization = await _context.Organizations.FirstOrDefaultAsync(o => o.organization_id == curr_user.organization_id);
+            if (organization == null || string.IsNullOrEmpty(organization.smtp_server) || string.IsNullOrEmpty(organization.smtp_username) || string.IsNullOrEmpty(organization.smtp_password))
             {
-                if (MailAddress.TryCreate(email, out _))
-                {
-                    mail.Bcc.Add(email);
-                }
+                TempData["ErrorMessage"] = "Organization email settings are not properly configured.";
+                return RedirectToAction("MassEmail");
             }
 
-            if (!mail.Bcc.Any())
+            try
             {
+                var mail = new MailMessage();
+                mail.From = new MailAddress(organization.smtp_username);
+                mail.Subject = request.Subject;
+                mail.Body = request.Message;
+                mail.IsBodyHtml = false;
+
+                foreach (var email in request.Recipients)
+                {
+                    if (MailAddress.TryCreate(email, out _))
+                    {
+                        mail.Bcc.Add(email);
+                    }
+                }
+
+                if (!mail.Bcc.Any())
+                {
                     TempData["ErrorMessage"] = "No valid recipient emails were provided.";
                     return RedirectToAction("MassEmail");
                 }
 
-            var smtpClient = new SmtpClient(smtpServer)
-            {
-                Port = port,
-                Credentials = new NetworkCredential(username, password),
-                EnableSsl = true,
-            };
+                string decryptedPassword;
+                try
+                {
+                    decryptedPassword = AesEncryptionHelper.Decrypt(organization.smtp_password);
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Failed to decrypt email password: {ex.Message}";
+                    return RedirectToAction("MassEmail");
+                }
 
-            try
-            {
-                await smtpClient.SendMailAsync(mail);
+                var smtpClient = new SmtpClient(organization.smtp_server)
+                {
+                    Port = organization.smtp_port ?? 587,
+                    Credentials = new NetworkCredential(organization.smtp_username, decryptedPassword), // <-- FIXED here
+                    EnableSsl = true,
+                };
+
+                try
+                {
+                    await smtpClient.SendMailAsync(mail);
                     TempData["SuccessMessage"] = "Mass email sent to recipients!";
-                    //return RedirectToAction("MassEmail");
                     return Ok();
                 }
-            catch (Exception sendEx)
+                catch (Exception sendEx)
+                {
+                    TempData["ErrorMessage"] = $"Error sending mass email: {sendEx.Message}";
+                    return RedirectToAction("MassEmail");
+                }
+            }
+            catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error sending mass email: {sendEx.Message}";
+                TempData["ErrorMessage"] = $"Unexpected error: {ex.Message}";
                 return RedirectToAction("MassEmail");
             }
         }
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] = $"Unexpected error: {ex.Message}";
-            return RedirectToAction("MassEmail");
-        }
-    }
 
 
-    //Logout
-    [Authorize]
+        //Logout
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync("MyCookieAuth");

@@ -129,9 +129,17 @@
         @if (isAdmin)
         {
             <div class="dropdown" id="macSMSDropdown" style="display:none;">
-                <a href="/PNM/MassText" class="btn btn-success">Send Texts</a>
-        </div>
+                <button class="btn btn-success dropdown-toggle" type="button" id="massTextDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Texts
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="massTextDropdown">
+                    <li>
+                        <a class="dropdown-item" asp-controller="PNM" asp-action="MassMessage">Send Mass Text</a>
+                    </li>
+                </ul>
+            </div>
         }
+
 
     </div>
 

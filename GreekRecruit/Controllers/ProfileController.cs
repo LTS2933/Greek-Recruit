@@ -69,7 +69,8 @@ namespace GreekRecruit.Controllers
             if (curr_user == null) return Unauthorized();
             if (curr_user.role != "Admin") return Forbid();
 
-            if (email == null ||  full_name == null){
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(full_name))
+            {
                 TempData["ErrorMessage"] = "Email and full name are required!";
                 return RedirectToAction("AddUsers");
             }
@@ -79,94 +80,94 @@ namespace GreekRecruit.Controllers
                 TempData["ErrorMessage"] = $"Email {email} already exists!";
                 return RedirectToAction("AddUsers");
             }
-            else
+
+            try
             {
+                var organization = await _context.Organizations.FirstOrDefaultAsync(o => o.organization_id == curr_user.organization_id);
+                if (organization == null)
+                {
+                    TempData["ErrorMessage"] = "Organization settings not configured.";
+                    return RedirectToAction("AddUsers");
+                }
+
+                string smtpServer = organization.smtp_server;
+                string smtpUsername = organization.smtp_username;
+                string smtpPasswordDecrypted;
+
                 try
                 {
-
-                    var emailSettings = _configuration.GetSection("EmailSettings");
-                    var smtpServer = emailSettings["SmtpServer"];
-                    var port = int.Parse(emailSettings["Port"]);
-                    var username = Environment.GetEnvironmentVariable("SMTP_USER");
-                    var password = Environment.GetEnvironmentVariable("SMTP_KEY");
-
-                    var mail = new MailMessage();
-                    mail.From = new MailAddress(username);
-                    mail.To.Add(email);
-
-
-                    int ampersand_index = email.IndexOf("@");
-                    if (MailAddress.TryCreate(email, out _))
-                    {
-                        User user = new User();
-                        user.username = email.Substring(0, ampersand_index);
-                        user.email = email;
-                        user.full_name = full_name;
-                        user.role = "User";
-                        user.password = GenerateRandomPassword();
-                        
-                        //Will want to implement a password hashing algorithm here
-                        //var hasher = new PasswordHasher<User>();
-                        //string hashedPassword = hasher.HashPassword(user, user.password);
-                        //user.password = hashedPassword;
-                        user.is_hashed_passowrd = "N";
-
-                        var current_user_username = User.Identity?.Name;
-                        var current_user = await _context.Users.FirstOrDefaultAsync(u => u.username == current_user_username);
-
-                        //if (current_user == null)
-                        //{
-                        //    ViewData["ErrorMessage"] = "User not found. Please log in again.";
-                        //    return RedirectToAction("Login", "Login");
-                        //}
-
-                        user.organization_id = current_user.organization_id;
-
-                        //_context.Add<User>(user);
-                        //_context.SaveChanges();
-
-                        mail.Subject = "Join GreekRecruit!";
-                        mail.Body = $"You've been invited to join GreekRecruit by your admin, {current_user.full_name}.\nYou can now log in using these credentials.\nUsername: {user.username}\nPassword: {user.password}" +
-                        "\nFor security reasons, please reset your password. You can do so by clicking the Settings button in your profile dropdown.";
-
-                        var smtpClient = new SmtpClient(smtpServer)
-                        {
-                            Port = port,
-                            Credentials = new NetworkCredential(username, password),
-                            EnableSsl = true,
-                        };
-
-                        using var transaction = await _context.Database.BeginTransactionAsync();
-                        try
-                        {
-                            await smtpClient.SendMailAsync(mail);
-
-                            _context.Users.Add(user);
-                            await _context.SaveChangesAsync();
-
-                            await transaction.CommitAsync();
-
-                            TempData["SuccessMessage"] = $"User added and email sent to {email}";
-                        }
-                        catch (Exception innerEx)
-                        {
-                            await transaction.RollbackAsync();
-                            TempData["ErrorMessage"] = $"Error adding user or sending email: {innerEx.Message}";
-                        }
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "Invalid email address! Please input a valid email address.";
-                    }
+                    smtpPasswordDecrypted = AesEncryptionHelper.Decrypt(organization.smtp_password);
                 }
                 catch (Exception ex)
                 {
-                    TempData["ErrorMessage"] = $"Error sending email: {ex.Message}";
+                    TempData["ErrorMessage"] = $"Failed to decrypt SMTP password: {ex.Message}";
+                    return RedirectToAction("AddUsers");
                 }
 
-                return RedirectToAction("AddUsers");
+                if (string.IsNullOrEmpty(smtpServer) || string.IsNullOrEmpty(smtpUsername) || string.IsNullOrEmpty(smtpPasswordDecrypted))
+                {
+                    TempData["ErrorMessage"] = "Organization SMTP settings are incomplete.";
+                    return RedirectToAction("AddUsers");
+                }
+
+                var mail = new MailMessage();
+                mail.From = new MailAddress(smtpUsername);
+                mail.To.Add(email);
+
+                if (!MailAddress.TryCreate(email, out _))
+                {
+                    TempData["ErrorMessage"] = "Invalid email address! Please input a valid email address.";
+                    return RedirectToAction("AddUsers");
+                }
+
+                // Create the new user
+                var user = new User
+                {
+                    username = email.Substring(0, email.IndexOf("@")),
+                    email = email,
+                    full_name = full_name,
+                    role = "User",
+                    password = GenerateRandomPassword(),
+                    is_hashed_passowrd = "N",
+                    organization_id = curr_user.organization_id
+                };
+
+                mail.Subject = "Join GreekRecruit!";
+                mail.Body = $"You've been invited to join GreekRecruit by your admin, {curr_user.full_name}.\nYou can now log in using these credentials.\nUsername: {user.username}\nPassword: {user.password}" +
+                            "\nFor security reasons, please reset your password. You can do so by clicking the Settings button in your profile dropdown.";
+
+                var smtpClient = new SmtpClient(smtpServer)
+                {
+                    Port = organization.smtp_port ?? 587,
+                    Credentials = new NetworkCredential(smtpUsername, smtpPasswordDecrypted),
+                    EnableSsl = true,
+                };
+
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    await smtpClient.SendMailAsync(mail);
+
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    TempData["SuccessMessage"] = $"User added and email sent to {email}";
+                }
+                catch (Exception innerEx)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = $"Error adding user or sending email: {innerEx.Message}";
+                }
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error sending email: {ex.Message}";
+            }
+
+            return RedirectToAction("AddUsers");
         }
+
 
         //Helper method for AddUserData. Generates a random, valid password
         private string GenerateRandomPassword()
@@ -259,6 +260,54 @@ namespace GreekRecruit.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult EncryptPasswordTool()
+        {
+            var curr_user_uname = User.Identity?.Name;
+            var curr_user = _context.Users.FirstOrDefault(u => u.username == curr_user_uname);
+
+            if (curr_user.username != "LiamSmith12")
+            {
+                return Forbid();
+            }
+
+            return View();
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EncryptPasswordTool(string plainPassword)
+        {
+            var curr_user_uname = User.Identity?.Name;
+            var curr_user = _context.Users.FirstOrDefault(u => u.username == curr_user_uname);
+
+            if (curr_user?.username != "LiamSmith12")
+            {
+                return Forbid();
+            }
+
+            if (string.IsNullOrEmpty(plainPassword))
+            {
+                TempData["ErrorMessage"] = "Password cannot be empty.";
+                return RedirectToAction("EncryptPasswordTool");
+            }
+
+            try
+            {
+                var encryptedPassword = AesEncryptionHelper.Encrypt(plainPassword);
+                TempData["SuccessMessage"] = $"Encrypted password: {encryptedPassword}";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Encryption error: {ex.Message}";
+            }
+
+            return RedirectToAction("EncryptPasswordTool");
         }
 
 
