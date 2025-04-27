@@ -168,6 +168,116 @@ namespace GreekRecruit.Controllers
             return RedirectToAction("AddUsers");
         }
 
+        //The View for batch adding new users to the Organization is rendered
+        [Authorize]
+        public async Task<IActionResult> BatchAddUsers()
+        {
+            var username = User.Identity?.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
+            if (user == null) return Unauthorized();
+
+            if (user.role == "Admin")
+            {
+                return View();
+            }
+            else
+            {
+                return Forbid();
+            }
+        }
+
+        //Submits the form handling batch adding new users
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BatchAddUserData(List<string> fullNames, List<string> emails)
+        {
+            var curr_user_uname = User.Identity?.Name;
+            var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
+            if (curr_user == null) return Unauthorized();
+            if (curr_user.role != "Admin") return Forbid();
+
+            if (fullNames == null || emails == null || fullNames.Count != emails.Count)
+            {
+                TempData["ErrorMessage"] = "Mismatch or missing user data.";
+                return RedirectToAction("BatchAddUsers");
+            }
+
+            var organization = await _context.Organizations.FirstOrDefaultAsync(o => o.organization_id == curr_user.organization_id);
+            if (organization == null)
+            {
+                TempData["ErrorMessage"] = "Organization settings not configured.";
+                return RedirectToAction("BatchAddUsers");
+            }
+
+            string smtpServer = organization.smtp_server;
+            string smtpUsername = organization.smtp_username;
+            string smtpPasswordDecrypted = AesEncryptionHelper.Decrypt(organization.smtp_password);
+
+            var smtpClient = new SmtpClient(smtpServer)
+            {
+                Port = organization.smtp_port ?? 587,
+                Credentials = new NetworkCredential(smtpUsername, smtpPasswordDecrypted),
+                EnableSsl = true,
+            };
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                int usersAdded = 0;
+
+                for (int i = 0; i < emails.Count; i++)
+                {
+                    var email = emails[i];
+                    var fullName = fullNames[i];
+
+                    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(fullName))
+                        continue;
+
+                    if (await _context.Users.AnyAsync(u => u.email == email))
+                        continue;
+
+                    var newUser = new User
+                    {
+                        username = email.Substring(0, email.IndexOf("@")),
+                        email = email,
+                        full_name = fullName,
+                        role = "User",
+                        password = GenerateRandomPassword(),
+                        is_hashed_passowrd = "N",
+                        organization_id = curr_user.organization_id
+                    };
+
+                    var mail = new MailMessage
+                    {
+                        From = new MailAddress(smtpUsername),
+                        Subject = "Join GreekRecruit!",
+                        Body = $"You've been invited to join GreekRecruit by your admin, {curr_user.full_name}.\nYou can now log in using these credentials.\nUsername: {newUser.username}\nPassword: {newUser.password}" +
+                               "\nFor security reasons, please reset your password.",
+                        IsBodyHtml = false
+                    };
+                    mail.To.Add(email);
+
+                    await smtpClient.SendMailAsync(mail);
+
+                    _context.Users.Add(newUser);
+                    usersAdded++;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                TempData["SuccessMessage"] = $"{usersAdded} users added and invited successfully!";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                TempData["ErrorMessage"] = $"Error adding users: {ex.Message}";
+            }
+
+            return RedirectToAction("BatchAddUsers");
+        }
+
 
         //Helper method for AddUserData. Generates a random, valid password
         private string GenerateRandomPassword()
@@ -187,6 +297,7 @@ namespace GreekRecruit.Controllers
             return new string(passwordChars.OrderBy(c => Guid.NewGuid()).ToArray());
         }
 
+        //Handles the form for updating the user's password
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
@@ -213,7 +324,7 @@ namespace GreekRecruit.Controllers
 
             // Hash the new password
             user.password = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            user.is_hashed_passowrd = "Y"; // You can add this bool column to track who has upgraded
+            user.is_hashed_passowrd = "Y";
 
             try
             {
@@ -228,6 +339,7 @@ namespace GreekRecruit.Controllers
             return RedirectToAction("Index");
         }
 
+        //Handles the form for canceling the user's subscription with Stripe
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -262,7 +374,7 @@ namespace GreekRecruit.Controllers
             return RedirectToAction("Index");
         }
 
-
+        //Encryption tool for me only, will be used to encrypt user's SMTP app password from Google
         [Authorize]
         [HttpGet]
         public IActionResult EncryptPasswordTool()
@@ -278,6 +390,7 @@ namespace GreekRecruit.Controllers
             return View();
         }
 
+        //Handles the form for encrypting a password
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]

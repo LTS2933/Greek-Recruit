@@ -147,12 +147,18 @@
     </div>
 }
 
-
 <div class="container mt-5">
     <h2>Send a Mass Text</h2>
 
     <form id="massTextForm" class="mb-4">
         <label for="textMessage" class="form-label">Message to Send:</label>
+
+        <div class="mb-2">
+            <button type="button" id="insertFirstNameBtn" class="btn btn-sm btn-outline-secondary">
+                Insert First Name
+            </button>
+        </div>
+
         <textarea class="form-control" id="textMessage" rows="3" placeholder="Type your message here..."></textarea>
     </form>
 
@@ -171,7 +177,7 @@
                     <a class="btn btn-outline-primary btn-sm send-btn"
                        data-phone="@pnm.pnm_phone"
                        data-name="@pnm.pnm_fname"
-                        data-id="@pnm.pnm_id">
+                       data-id="@pnm.pnm_id">
                         Send
                     </a>
                 </div>
@@ -184,19 +190,44 @@
     document.addEventListener("DOMContentLoaded", function () {
         const messageBox = document.getElementById("textMessage");
         const sendButtons = document.querySelectorAll(".send-btn");
+        const insertFirstNameBtn = document.getElementById("insertFirstNameBtn");
+
+        insertFirstNameBtn.addEventListener("click", function () {
+            insertAtCursor(messageBox, "{{FirstName}}");
+        });
+
+        function insertAtCursor(input, textToInsert) {
+            if (document.selection) {
+                input.focus();
+                var sel = document.selection.createRange();
+                sel.text = textToInsert;
+            } else if (input.selectionStart || input.selectionStart === 0) {
+                const startPos = input.selectionStart;
+                const endPos = input.selectionEnd;
+                input.value = input.value.substring(0, startPos) + textToInsert + input.value.substring(endPos, input.value.length);
+                input.selectionStart = input.selectionEnd = startPos + textToInsert.length;
+                input.focus();
+            } else {
+                input.value += textToInsert;
+                input.focus();
+            }
+        }
 
         sendButtons.forEach(button => {
             button.addEventListener("click", function () {
                 const phone = button.getAttribute("data-phone");
                 const pnmId = button.getAttribute("data-id");
-                const message = encodeURIComponent(messageBox.value.trim());
+                const firstName = button.getAttribute("data-name");
+                let message = messageBox.value.trim();
 
                 if (!message) {
                     alert("Please enter a message before sending.");
                     return;
                 }
 
-                const smsLink = `sms:${phone}?&body=${message}`;
+                message = message.replaceAll("{{FirstName}}", firstName);
+
+                const smsLink = `sms:${phone}?&body=${encodeURIComponent(message)}`;
                 window.location.href = smsLink;
 
                 fetch(`/PNM/MarkTexted`, {
@@ -212,8 +243,8 @@
                 button.textContent = "Text Sent!";
                 button.classList.remove("btn-outline-primary");
                 button.classList.add("btn-success");
-
             });
         });
     });
 </script>
+
