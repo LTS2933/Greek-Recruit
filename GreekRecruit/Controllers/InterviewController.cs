@@ -93,6 +93,9 @@ public class InterviewController : Controller
         if (user == null) return Unauthorized();
         if (user.role != "Admin") return Forbid();
 
+        if (interview.organization_id != user.organization_id)
+            return Forbid();
+
         _context.Interviews.Remove(interview);
         await _context.SaveChangesAsync();
 

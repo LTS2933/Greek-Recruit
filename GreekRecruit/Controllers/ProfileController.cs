@@ -346,7 +346,7 @@ namespace GreekRecruit.Controllers
         public async Task<IActionResult> CancelSubscription()
         {
             var username = User.Identity?.Name;
-            var user = _context.Users.FirstOrDefault(u => u.username == username);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
 
             if (user == null) return Unauthorized();
             if (string.IsNullOrEmpty(user.SubscriptionId))
@@ -377,10 +377,10 @@ namespace GreekRecruit.Controllers
         //Encryption tool for me only, will be used to encrypt user's SMTP app password from Google
         [Authorize]
         [HttpGet]
-        public IActionResult EncryptPasswordTool()
+        public async Task<IActionResult> EncryptPasswordTool()
         {
             var curr_user_uname = User.Identity?.Name;
-            var curr_user = _context.Users.FirstOrDefault(u => u.username == curr_user_uname);
+            var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
 
             if (curr_user.username != "LiamSmith12")
             {
@@ -394,10 +394,10 @@ namespace GreekRecruit.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EncryptPasswordTool(string plainPassword)
+        public async Task<IActionResult> EncryptPasswordTool(string plainPassword)
         {
             var curr_user_uname = User.Identity?.Name;
-            var curr_user = _context.Users.FirstOrDefault(u => u.username == curr_user_uname);
+            var curr_user = await _context.Users.FirstOrDefaultAsync(u => u.username == curr_user_uname);
 
             if (curr_user?.username != "LiamSmith12")
             {

@@ -82,7 +82,9 @@ namespace GreekRecruit.Controllers
             if (user == null) return Unauthorized();
             if (user.role != "Admin") return Forbid();
 
-            var task = await _context.AdminTasks.FindAsync(task_id);
+            var task = await _context.AdminTasks
+                .FirstOrDefaultAsync(t => t.task_id == task_id && t.organization_id == user.organization_id);
+
             if (task == null) return NotFound();
 
             task.is_completed = !task.is_completed;
@@ -104,7 +106,9 @@ namespace GreekRecruit.Controllers
             if (user == null) return Unauthorized();
             if (user.role != "Admin") return Forbid();
 
-            var task = await _context.AdminTasks.FindAsync(task_id);
+            var task = await _context.AdminTasks
+                .FirstOrDefaultAsync(t => t.task_id == task_id && t.organization_id == user.organization_id);
+
             if (task == null) return NotFound();
 
             _context.AdminTasks.Remove(task);

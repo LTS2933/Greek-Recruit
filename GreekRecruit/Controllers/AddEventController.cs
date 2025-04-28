@@ -47,6 +47,9 @@ namespace GreekRecruit.Controllers
 
             if (ModelState.IsValid)
             {
+
+                model.organization_id = user.organization_id;
+
                 _context.Events.Add(model);
                 await _context.SaveChangesAsync();
 

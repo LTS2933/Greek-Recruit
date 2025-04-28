@@ -134,8 +134,9 @@ namespace GreekRecruit.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            var pnm = await _context.PNMs.FindAsync(pnm_id);
+            var pnm = await _context.PNMs.FirstOrDefaultAsync(p => p.pnm_id == pnm_id && p.organization_id == user.organization_id);
             if (pnm == null) return NotFound();
+
 
             try
             {
@@ -170,8 +171,9 @@ namespace GreekRecruit.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            var pnm = await _context.PNMs.FindAsync(pnm_id);
+            var pnm = await _context.PNMs.FirstOrDefaultAsync(p => p.pnm_id == pnm_id && p.organization_id == user.organization_id);
             if (pnm == null) return NotFound();
+
 
             try
             {
@@ -223,8 +225,9 @@ namespace GreekRecruit.Controllers
                 return RedirectToAction("Index", new { id = pnm_id });
             }
 
-            var pnm = await _context.PNMs.FindAsync(pnm_id);
+            var pnm = await _context.PNMs.FirstOrDefaultAsync(p => p.pnm_id == pnm_id && p.organization_id == user.organization_id);
             if (pnm == null) return NotFound();
+
 
             try
             {

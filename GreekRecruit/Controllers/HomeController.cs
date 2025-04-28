@@ -104,7 +104,9 @@ public class HomeController : Controller
             return RedirectToAction("Index");
         }
 
-        var pnms = await _context.PNMs.Where(p => selectedPnms.Contains(p.pnm_id)).ToListAsync();
+        var pnms = await _context.PNMs
+            .Where(p => selectedPnms.Contains(p.pnm_id) && p.organization_id == user.organization_id)
+            .ToListAsync();
 
         if (delete)
         {
