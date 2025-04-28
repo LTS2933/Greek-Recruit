@@ -10,15 +10,17 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-COPY GreekRecruit.csproj .
-RUN dotnet restore "./GreekRecruit.csproj"
+COPY GreekRecruit/GreekRecruit.csproj ./GreekRecruit/
+RUN dotnet restore "./GreekRecruit/GreekRecruit.csproj"
 
 COPY . .
+WORKDIR /src/GreekRecruit
 RUN dotnet build "./GreekRecruit.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish image
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+WORKDIR /src/GreekRecruit
 RUN dotnet publish "./GreekRecruit.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Final runtime image
