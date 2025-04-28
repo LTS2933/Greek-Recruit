@@ -143,10 +143,25 @@ public class InterestFormController : Controller
         string? fileName = null;
         if (pnm_profilepicture != null && pnm_profilepicture.Length > 0)
         {
+            if (pnm_profilepicture.Length > 5 * 1024 * 1024)
+            {
+                TempData["ErrorMessage"] = "Picture must be smaller than 5MB.";
+                return RedirectToAction("SubmitView", new { form_id = form_id });
+            }
+
             var extension = Path.GetExtension(pnm_profilepicture.FileName);
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            if (!allowedExtensions.Contains(extension.ToLower()))
+            {
+                TempData["ErrorMessage"] = "Only JPG and PNG images are allowed.";
+                return RedirectToAction("SubmitView", new { form_id = form_id });
+            }
+
+            // All good, upload
             fileName = $"pnm_{Guid.NewGuid()}{extension}";
             await _s3Service.UploadFileAsync(pnm_profilepicture.OpenReadStream(), fileName, pnm_profilepicture.ContentType);
         }
+
 
         submission.form_id = form_id;
         submission.organization_id = form.organization_id;
@@ -166,7 +181,8 @@ public class InterestFormController : Controller
             pnm_major = submission.pnm_major,
             pnm_gpa = submission.pnm_gpa,
             pnm_profilepictureurl = fileName,
-            pnm_instagramhandle = submission.pnm_instagramhandle
+            pnm_instagramhandle = submission.pnm_instagramhandle,
+            pnm_semester = GetCurrentSemester()
         };
 
         _context.PNMs.Add(pnm);
@@ -182,6 +198,14 @@ public class InterestFormController : Controller
     public IActionResult ThankYou()
     {
         return View();
+    }
+
+    private string GetCurrentSemester()
+    {
+        var now = DateTime.Now;
+        return (now.Month <= 6 && !(now.Month == 6 && now.Day > 1))
+            ? $"Spring {now.Year}"
+            : $"Fall {now.Year}";
     }
 
     //Logout

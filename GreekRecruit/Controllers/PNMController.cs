@@ -231,13 +231,27 @@ namespace GreekRecruit.Controllers
 
             try
             {
-                // Create a unique filename
+                // Validate file size
+                if (newProfilePicture.Length > 5 * 1024 * 1024) // 5MB
+                {
+                    TempData["ErrorMessage"] = "Profile picture must be smaller than 5MB.";
+                    return RedirectToAction("Index", new { id = pnm_id });
+                }
+
+                // Validate file extension
                 var fileExtension = Path.GetExtension(newProfilePicture.FileName);
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                if (!allowedExtensions.Contains(fileExtension.ToLower()))
+                {
+                    TempData["ErrorMessage"] = "Only JPG and PNG images are allowed.";
+                    return RedirectToAction("Index", new { id = pnm_id });
+                }
+
+                // Create a unique filename
                 var fileName = $"pnm_{pnm_id}_{Guid.NewGuid()}{fileExtension}";
 
                 // Upload file to S3
                 await _s3Service.UploadFileAsync(newProfilePicture.OpenReadStream(), fileName, newProfilePicture.ContentType);
-
                 // Optionally, store the filename (or URL) in your database
                 pnm.pnm_profilepictureurl = fileName; // Assuming you create a URL field instead of byte array
 

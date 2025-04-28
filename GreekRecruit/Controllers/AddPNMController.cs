@@ -70,13 +70,28 @@ namespace GreekRecruit.Controllers
             {
                 if (uploadedProfilePicture != null && uploadedProfilePicture.Length > 0)
                 {
+                    // Validate file size
+                    if (uploadedProfilePicture.Length > 5 * 1024 * 1024) // 5MB limit
+                    {
+                        ViewData["ErrorMessage"] = "Profile picture must be smaller than 5MB.";
+                        return View("Index");
+                    }
+
                     var fileExtension = Path.GetExtension(uploadedProfilePicture.FileName);
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                    if (!allowedExtensions.Contains(fileExtension.ToLower()))
+                    {
+                        ViewData["ErrorMessage"] = "Only JPG and PNG images are allowed.";
+                        return View("Index");
+                    }
+
                     var fileName = $"pnm_{Guid.NewGuid()}{fileExtension}";
 
                     await _s3Service.UploadFileAsync(uploadedProfilePicture.OpenReadStream(), fileName, uploadedProfilePicture.ContentType);
 
                     pnm.pnm_profilepictureurl = fileName;
                 }
+
 
 
                 pnm.organization_id = user.organization_id;
