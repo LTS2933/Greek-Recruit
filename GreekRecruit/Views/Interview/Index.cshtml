@@ -175,6 +175,26 @@
 
 </div>
 
+<div class="modal fade" id="interviewModal" tabindex="-1" aria-labelledby="interviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="interviewModalLabel">Interview Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Name:</strong> <span id="modalName"></span></p>
+                <p><strong>Date/Time:</strong> <span id="modalDateTime"></span></p>
+                <p><strong>Notes:</strong> <span id="modalNotes"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
     let selectedEventId = null;
 
@@ -196,6 +216,14 @@
             eventDisplay: 'block',
             height: 'auto',
             timeZone: 'local',
+            eventDataTransform: function(event) {
+                return {
+                    ...event,
+                    extendedProps: {
+                        notes: event.notes
+                    }
+                };
+            },
             eventClick: function (info) {
                 calendar.getEvents().forEach(e => {
                     e.setProp("backgroundColor", "#0d6efd");
@@ -205,6 +233,16 @@
                 selectedEventId = info.event.id;
                 document.getElementById('cancelInterviewId').value = selectedEventId;
                 document.getElementById('cancelBtn').classList.remove("d-none");
+
+                document.getElementById('modalName').innerText = info.event.title;
+                document.getElementById('modalDateTime').innerText = new Date(info.event.start).toLocaleString([], {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                });
+                document.getElementById('modalNotes').innerText = info.event.extendedProps.notes || 'No notes provided';
+
+                var modal = new bootstrap.Modal(document.getElementById('interviewModal'));
+                modal.show();
             },
 
             dateClick: function () {
@@ -216,13 +254,11 @@
                 document.getElementById('cancelInterviewId').value = "";
                 document.getElementById('cancelBtn').classList.add("d-none");
             }
-
         });
 
         calendar.render();
     });
 </script>
-
 
 <style>
     #calendar {

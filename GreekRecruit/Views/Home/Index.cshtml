@@ -451,3 +451,36 @@ else
         }
     });
 </script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const isErrorPage = document.title.includes("404") || document.body.innerText.includes("Not Found");
+
+        const isAuthenticated = document.getElementById("userMenuButton") !== null;
+
+        if (isErrorPage && isAuthenticated) {
+            let attempts = 0;
+            const maxRetries = 4;
+
+            document.body.innerHTML += "<p class='text-center text-muted mt-3'>Warming up... Just a moment.</p>";
+
+            const retryLoad = () => {
+                attempts++;
+                if (attempts > maxRetries) {
+                    console.warn("Max retries reached. Still cold or misrouted.");
+                    document.body.innerHTML += "<p class='text-center text-danger mt-3'>Still loading... Try refreshing in a few moments.</p>";
+                    return;
+                }
+
+                console.log(`Retrying dashboard load... Attempt ${attempts}`);
+                setTimeout(() => {
+                    window.location.href = '/Home/Index';
+                }, 3000);
+            };
+
+            retryLoad();
+        }
+    });
+</script>
+

@@ -121,7 +121,8 @@ public class InterviewController : Controller
                       interview.interview_id,
                       interview.interview_datetime,
                       pnm.pnm_fname,
-                      pnm.pnm_lname
+                      pnm.pnm_lname,
+                      interview.notes
                   })
             .ToListAsync();
 
@@ -137,7 +138,8 @@ public class InterviewController : Controller
             title = $"{i.pnm_fname} {i.pnm_lname}",
             start = i.interview_datetime.ToString("s"),
             end = i.interview_datetime.AddMinutes(30).ToString("s"),
-            allDay = false
+            allDay = false,
+            notes = i.notes ?? ""
         });
 
         return Json(events);

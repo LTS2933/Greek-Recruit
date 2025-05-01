@@ -25,6 +25,10 @@ namespace GreekRecruit.Models
         public DbSet<InterestFormSubmission> InterestFormSubmissions { get; set; }
 
         public DbSet<Interview> Interviews { get; set; }
+
+        public DbSet<PointsCategory> PointsCategories { get; set; }
+
+        public DbSet<UserPointLog> UserPointLogs { get; set; }
         public SqlDataContext(DbContextOptions<SqlDataContext> options) 
             : base(options)
         {}
