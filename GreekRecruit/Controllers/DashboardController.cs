@@ -84,6 +84,55 @@ public class DashboardController : Controller
             .Take(5)
             .ToListAsync();
 
+        // 1. Get all relevant users for the org
+        var users = await _context.Users
+            .Where(u => u.organization_id == orgId)
+            .ToListAsync();
+
+        // 2. Get all logs for the org users
+        var userIds = users.Select(u => u.user_id).ToList();
+
+        var logs = await _context.UserPointLogs
+            .Where(l => userIds.Contains(l.UserID))
+            .ToListAsync();
+
+        // 3. Filter logs for current semester (C# side)
+        var semesterLogs = logs
+            .Where(l => GetSemesterFromDate(l.DateAwarded) == currentSemester)
+            .ToList();
+
+        // 4. Get all point categories for the org
+        var pointsCategories = await _context.PointsCategories
+            .Where(pc => pc.organization_id == orgId)
+            .ToListAsync();
+
+        // Build a lookup to avoid repeated LINQ queries
+        var categoryLookup = pointsCategories.ToDictionary(c => c.PointsCategoryID, c => c.PointsValue);
+        var userLookup = users.ToDictionary(u => u.user_id, u => u.username);
+
+        // 5. Calculate total points per user
+        var userPoints = semesterLogs
+            .GroupBy(l => l.UserID)
+            .Select(g =>
+            {
+                var totalPoints = g.Sum(log =>
+                {
+                    var category = pointsCategories.FirstOrDefault(c => c.PointsCategoryID == log.PointsCategoryID);
+                    return category?.PointsValue ?? 0;
+                });
+
+                var user = _context.Users.FirstOrDefault(u => u.user_id == g.Key);
+                return new
+                {
+                    FullName = (user != null) ? $"{user.full_name}" : "Unknown",
+                    TotalPoints = totalPoints
+                };
+            })
+            .OrderByDescending(x => x.TotalPoints)
+            .ToList();
+
+
+
         ViewData["TopAttendees"] = topAttendees;
         ViewData["TopCommenters"] = topCommenters;
         ViewData["StatusCounts"] = statusDict;
@@ -92,6 +141,8 @@ public class DashboardController : Controller
         ViewData["TotalEvents"] = totalEvents;
         ViewData["RecentVotes"] = mostRecentVoted;
         ViewData["CurrentSemester"] = GetCurrentSemester();
+        ViewData["UserPoints"] = userPoints;
+
         return View();
     }
 

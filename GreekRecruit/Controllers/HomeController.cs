@@ -83,6 +83,16 @@ public class HomeController : Controller
         ViewData["TaskPreview"] = taskPreview;
         ViewData["CurrentSemester"] = semester;
 
+        var now = DateTime.Now;
+
+        var activeEvent = await _context.Events
+            .Where(e => e.event_datetime <= now && e.event_datetime.AddHours(3) >= now)
+            .OrderBy(e => e.event_datetime)
+            .FirstOrDefaultAsync();
+
+        ViewData["ActiveEvent"] = activeEvent;
+
+
         return View(pnms);
     }
 
@@ -140,6 +150,68 @@ public class HomeController : Controller
             TempData["ErrorMessage"] = "No changes were made. Please select a status or semester.";
         }
 
+        return RedirectToAction("Index");
+    }
+
+    //Handles the form for checking into an event as a member, logging points as well
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CheckInToEvent(int eventId)
+    {
+        var username = User.Identity?.Name;
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
+        if (user == null) return Unauthorized();
+
+        var eventExists = await _context.Events.AnyAsync(e => e.event_id == eventId);
+        if (!eventExists)
+        {
+            TempData["ErrorMessage"] = "Event not found.";
+            return RedirectToAction("Index");
+        }
+
+        var alreadyCheckedIn = await _context.MemberEventAttendances
+            .AnyAsync(m => m.EventId == eventId && m.UserId == user.user_id);
+
+        if (alreadyCheckedIn)
+        {
+            TempData["ErrorMessage"] = "You already checked in.";
+            return RedirectToAction("Index");
+        }
+
+        var checkIn = new MemberEventAttendance
+        {
+            EventId = eventId,
+            UserId = user.user_id,
+            CheckedInAt = DateTime.Now
+        };
+        _context.MemberEventAttendances.Add(checkIn);
+        await _context.SaveChangesAsync();
+
+        try
+        {
+            var pointsCategory = await _context.PointsCategories
+                .FirstOrDefaultAsync(c => c.ActionName == "Attend an Event" && c.organization_id == user.organization_id);
+
+            if (pointsCategory != null)
+            {
+                var pointLog = new UserPointLog
+                {
+                    UserID = user.user_id,
+                    PointsCategoryID = pointsCategory.PointsCategoryID,
+                    PointsAwarded = pointsCategory.PointsValue,
+                    DateAwarded = DateTime.Now
+                };
+                _context.UserPointLogs.Add(pointLog);
+                await _context.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Points awarding failed: {ex}");
+        }
+
+        TempData["SuccessMessage"] = "Check-in successful!";
         return RedirectToAction("Index");
     }
 

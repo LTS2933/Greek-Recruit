@@ -7,6 +7,7 @@
     var recentVotes = (ViewData["RecentVotes"] as IEnumerable<dynamic>)?.ToList() ?? new List<dynamic>();
     var topAttendees = ViewData["TopAttendees"] as IEnumerable<dynamic> ?? new List<dynamic>();
     var topCommenters = ViewData["TopCommenters"] as IEnumerable<dynamic> ?? new List<dynamic>();
+    var userPoints = ViewData["UserPoints"] as IEnumerable<dynamic> ?? new List<dynamic>();
 
 }
 
@@ -128,6 +129,7 @@
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
                 <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profile</a></li>
                 <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Stats & Insights</a></li>
+                <li><a class="dropdown-item" asp-controller="Profile" asp-action="PointsCategories">Points System</a></li>
                 @if (isAdmin)
                 {
                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="AddUsers">Add Users</a></li>
@@ -201,6 +203,38 @@
             </li>
         }
     </ul>
+
+    <h4><strong>Full Points System Board (Current Semester)</strong></h4>
+    <table class="table table-bordered align-middle mb-4">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>Total Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (userPoints.Any())
+            {
+                foreach (var up in userPoints)
+                {
+                    <tr>
+                        <td>@up.FullName</td>
+                        <td>@up.TotalPoints</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="2" class="text-center">No points data available for this semester.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+
+
 
     <h4>Recent Voting Sessions</h4>
     <table class="table table-bordered align-middle">

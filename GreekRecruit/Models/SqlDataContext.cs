@@ -29,6 +29,8 @@ namespace GreekRecruit.Models
         public DbSet<PointsCategory> PointsCategories { get; set; }
 
         public DbSet<UserPointLog> UserPointLogs { get; set; }
+
+        public DbSet<MemberEventAttendance> MemberEventAttendances { get; set; }
         public SqlDataContext(DbContextOptions<SqlDataContext> options) 
             : base(options)
         {}

@@ -92,12 +92,36 @@ namespace GreekRecruit.Controllers
                     pnm.pnm_profilepictureurl = fileName;
                 }
 
-
-
                 pnm.organization_id = user.organization_id;
                 pnm.pnm_semester = GetCurrentSemester();
                 _context.PNMs.Add(pnm);
                 await _context.SaveChangesAsync();
+
+
+                try
+                {
+                    var addPnmPointsCategory = await _context.PointsCategories
+                        .FirstOrDefaultAsync(c => c.ActionName == "Add a PNM" && c.organization_id == user.organization_id);
+
+                    if (addPnmPointsCategory != null)
+                    {
+                        var pointLog = new UserPointLog
+                        {
+                            UserID = user.user_id,
+                            PointsCategoryID = addPnmPointsCategory.PointsCategoryID,
+                            PointsAwarded = addPnmPointsCategory.PointsValue,
+                            DateAwarded = DateTime.Now
+                        };
+                        _context.UserPointLogs.Add(pointLog);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception logEx)
+                {
+                    Console.WriteLine($"Points awarding failed: {logEx}");
+                }
+
+
 
                 ViewData["SuccessMessage"] = "PNM submitted successfully!";
             }

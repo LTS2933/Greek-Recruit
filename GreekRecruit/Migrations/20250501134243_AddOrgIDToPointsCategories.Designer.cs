@@ -4,6 +4,7 @@ using GreekRecruit.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GreekRecruit.Migrations
 {
     [DbContext(typeof(SqlDataContext))]
-    partial class SqlDataContextModelSnapshot : ModelSnapshot
+    [Migration("20250501134243_AddOrgIDToPointsCategories")]
+    partial class AddOrgIDToPointsCategories
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -275,28 +278,6 @@ namespace GreekRecruit.Migrations
                     b.ToTable("Interviews");
                 });
 
-            modelBuilder.Entity("GreekRecruit.Models.MemberEventAttendance", b =>
-                {
-                    b.Property<int>("MemberEventAttendanceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MemberEventAttendanceId"));
-
-                    b.Property<DateTime>("CheckedInAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EventId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("MemberEventAttendanceId");
-
-                    b.ToTable("MemberEventAttendances");
-                });
-
             modelBuilder.Entity("GreekRecruit.Models.Organization", b =>
                 {
                     b.Property<int>("organization_id")
@@ -518,7 +499,7 @@ namespace GreekRecruit.Migrations
                     b.Property<DateTime>("DateAwarded")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("PointsAwarded")
+                    b.Property<int>("PointsAwarded")
                         .HasColumnType("int");
 
                     b.Property<int>("PointsCategoryID")

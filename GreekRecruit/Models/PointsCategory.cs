@@ -6,6 +6,8 @@ namespace GreekRecruit.Models
     {
         [Key]
         public int PointsCategoryID { get; set; }
+
+        public int organization_id { get; set; }
         public string ActionName { get; set; }
         public int PointsValue { get; set; }
     }

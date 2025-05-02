@@ -21,12 +21,14 @@ namespace GreekRecruit.Controllers
         private readonly SqlDataContext _context;
         private readonly S3Service _s3Service;
         private readonly IConfiguration _configuration;
+        private readonly OpenAIServiceWrapper _openAIService;
 
-        public PNMController(SqlDataContext context, S3Service s3Service, IConfiguration configuration  ) // add S3Service here
+        public PNMController(SqlDataContext context, S3Service s3Service, IConfiguration configuration, OpenAIServiceWrapper openAIService  ) // add S3Service here
         {
             _context = context;
             _s3Service = s3Service;
             _configuration = configuration;
+            _openAIService = openAIService;
         }
 
         //Returns the View for the given PNM we are on
@@ -61,9 +63,42 @@ namespace GreekRecruit.Controllers
                 ViewData["S3ProfilePictureUrl"] = s3Url;
             }
 
+            var pnmComments = comments.Select(c => c.comment_text).ToList();
+
+            bool canShowSummaryButton = pnmComments.Count >= 5;
+
+            ViewData["CanShowSummaryButton"] = canShowSummaryButton;
+            ViewData["PNMComments"] = pnmComments;
+
 
             return View((pnm, comments, sessions));
         }
+
+        //Get the AI summary for a PNM
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateSummary(int pnmId)
+        {
+            var pnm = await _context.PNMs.FindAsync(pnmId);
+            if (pnm == null) return NotFound();
+
+            var comments = await _context.Comments
+                .Where(c => c.pnm_id == pnmId)
+                .Select(c => c.comment_text)
+                .ToListAsync();
+
+            var eventsAttended = await _context.EventsAttendance
+                .Where(e => e.pnm_fname == pnm.pnm_fname && e.pnm_lname == pnm.pnm_lname
+                    && e.organization_id == pnm.organization_id)
+                .CountAsync();
+
+            var summary = await _openAIService.GeneratePNMSummaryAsync(comments, eventsAttended);
+
+            TempData["Summary"] = summary;
+            return RedirectToAction("PNMProfile", new { pnmId });
+        }
+
 
         //Submit a comment for a specific PNM
         [Authorize]
@@ -90,7 +125,7 @@ namespace GreekRecruit.Controllers
                 comment.comment_author = username ?? "Unknown";
                 comment.comment_author_name = user.full_name ?? "Unknown";
 
-                if (string.IsNullOrEmpty(comment.comment_text))
+                if (string.IsNullOrWhiteSpace(comment.comment_text))
                 {
                     TempData["ErrorMessage"] = "Comment cannot be empty. Please try again.";
 
@@ -99,6 +134,31 @@ namespace GreekRecruit.Controllers
 
                 _context.Comments.Add(comment);
                 await _context.SaveChangesAsync();
+
+
+                try
+                {
+                    var commentPointsCategory = await _context.PointsCategories
+                        .FirstOrDefaultAsync(c => c.ActionName == "Add a Comment on a PNM" && c.organization_id == user.organization_id);
+
+                    if (commentPointsCategory != null)
+                    {
+                        var pointLog = new UserPointLog
+                        {
+                            UserID = user.user_id,
+                            PointsCategoryID = commentPointsCategory.PointsCategoryID,
+                            PointsAwarded = commentPointsCategory.PointsValue,
+                            DateAwarded = DateTime.Now
+                        };
+                        _context.UserPointLogs.Add(pointLog);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception logEx)
+                {
+                    Console.WriteLine($"Points awarding failed: {logEx}");
+                }
+
 
                 TempData["SuccessMessage"] = "Changes Saved.";
                 return RedirectToAction("Index", new { id = pnm_id });
@@ -432,6 +492,32 @@ namespace GreekRecruit.Controllers
             _context.PNMVoteTrackers.Add(tracker);
 
             await _context.SaveChangesAsync();
+
+            try
+            {
+                var votePointsCategory = await _context.PointsCategories
+                    .FirstOrDefaultAsync(c => c.ActionName == "Vote on a PNM" && c.organization_id == user.organization_id);
+
+                if (votePointsCategory != null)
+                {
+                    var pointLog = new UserPointLog
+                    {
+                        UserID = user.user_id,
+                        PointsCategoryID = votePointsCategory.PointsCategoryID,
+                        PointsAwarded = votePointsCategory.PointsValue,
+                        DateAwarded = DateTime.Now
+                    };
+                    _context.UserPointLogs.Add(pointLog);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception logEx)
+            {
+                Console.WriteLine($"Points awarding failed: {logEx}");
+            }
+
+
+
             return RedirectToAction("Thankyou");
         }
 

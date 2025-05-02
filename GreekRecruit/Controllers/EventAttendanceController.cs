@@ -71,20 +71,35 @@ namespace GreekRecruit.Controllers
         {
             var username = User.Identity?.Name;
             var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
-
             if (user == null) return Unauthorized();
 
             var r_event = await _context.Events.FirstOrDefaultAsync(e => e.event_id == event_id && e.organization_id == user.organization_id);
             if (r_event == null) return NotFound();
 
-            var attendees = await _context.EventsAttendance
+            var pnmAttendees = await _context.EventsAttendance
                 .Where(a => a.event_id == event_id && a.organization_id == user.organization_id)
                 .OrderByDescending(a => a.checked_in_at)
                 .ToListAsync();
 
+            var memberAttendees = await _context.MemberEventAttendances
+                .Where(m => m.EventId == event_id)
+                .Join(_context.Users,
+                      member => member.UserId,
+                      u => u.user_id,
+                      (member, u) => new
+                      {
+                          u.full_name,
+                          member.CheckedInAt
+                      })
+                .OrderByDescending(m => m.CheckedInAt)
+                .ToListAsync();
+
             ViewData["EventName"] = r_event.event_name;
-            return View(attendees);
+            ViewData["MemberAttendees"] = memberAttendees;
+
+            return View(pnmAttendees);
         }
+
 
         //Logout
         [Authorize]

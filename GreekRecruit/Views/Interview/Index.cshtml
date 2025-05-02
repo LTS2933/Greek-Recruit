@@ -120,6 +120,7 @@
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
                 <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profile</a></li>
                 <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Stats & Insights</a></li>
+                <li><a class="dropdown-item" asp-controller="Profile" asp-action="PointsCategories">Points System</a></li>
                 @if (isAdmin)
                 {
                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="AddUsers">Add Users</a></li>
@@ -194,7 +195,6 @@
     </div>
 </div>
 
-
 <script>
     let selectedEventId = null;
 
@@ -216,7 +216,7 @@
             eventDisplay: 'block',
             height: 'auto',
             timeZone: 'local',
-            eventDataTransform: function(event) {
+            eventDataTransform: function (event) {
                 return {
                     ...event,
                     extendedProps: {
@@ -225,24 +225,41 @@
                 };
             },
             eventClick: function (info) {
-                calendar.getEvents().forEach(e => {
-                    e.setProp("backgroundColor", "#0d6efd");
-                });
-                info.event.setProp("backgroundColor", "#dc3545");
+                try {
+                    calendar.getEvents().forEach(e => {
+                        e.setProp("backgroundColor", "#0d6efd");
+                    });
+                    info.event.setProp("backgroundColor", "#dc3545");
 
-                selectedEventId = info.event.id;
-                document.getElementById('cancelInterviewId').value = selectedEventId;
-                document.getElementById('cancelBtn').classList.remove("d-none");
+                    selectedEventId = info.event.id;
 
-                document.getElementById('modalName').innerText = info.event.title;
-                document.getElementById('modalDateTime').innerText = new Date(info.event.start).toLocaleString([], {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                });
-                document.getElementById('modalNotes').innerText = info.event.extendedProps.notes || 'No notes provided';
+                    const cancelInput = document.getElementById('cancelInterviewId');
+                    if (cancelInput) {
+                        cancelInput.value = selectedEventId;
+                    }
 
-                var modal = new bootstrap.Modal(document.getElementById('interviewModal'));
-                modal.show();
+                    const cancelBtn = document.getElementById('cancelBtn');
+                    if (cancelBtn) {
+                        cancelBtn.classList.remove("d-none");
+                    }
+
+                    document.getElementById('modalName').innerText = info.event.title;
+                    document.getElementById('modalDateTime').innerText = new Date(info.event.start).toLocaleString([], {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    });
+                    document.getElementById('modalNotes').innerText = info.event.extendedProps.notes || 'No notes provided';
+
+                    var modalEl = document.getElementById('interviewModal');
+                    if (modalEl) {
+                        var modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    } else {
+                        console.error('Modal element with ID "interviewModal" not found in DOM!');
+                    }
+                } catch (err) {
+                    console.error('Error in eventClick handler:', err);
+                }
             },
 
             dateClick: function () {
@@ -251,14 +268,24 @@
                 });
 
                 selectedEventId = null;
-                document.getElementById('cancelInterviewId').value = "";
-                document.getElementById('cancelBtn').classList.add("d-none");
+
+                const cancelInput = document.getElementById('cancelInterviewId');
+                if (cancelInput) {
+                    cancelInput.value = "";
+                }
+
+                const cancelBtn = document.getElementById('cancelBtn');
+                if (cancelBtn) {
+                    cancelBtn.classList.add("d-none");
+                }
             }
         });
 
         calendar.render();
     });
 </script>
+
+
 
 <style>
     #calendar {

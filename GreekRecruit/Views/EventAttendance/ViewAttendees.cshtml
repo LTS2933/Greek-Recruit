@@ -3,6 +3,9 @@
     ViewData["Title"] = "Attendees";
     var eventName = ViewData["EventName"] as string;
 }
+@{
+    var memberAttendees = ViewData["MemberAttendees"] as IEnumerable<dynamic> ?? new List<dynamic>();
+}
 
 @{
     var username = User.Identity?.Name;
@@ -119,6 +122,7 @@
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
                 <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profile</a></li>
                 <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Stats & Insights</a></li>
+                <li><a class="dropdown-item" asp-controller="Profile" asp-action="PointsCategories">Points System</a></li>
                 @if (isAdmin)
                 {
                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="AddUsers">Add Users</a></li>
@@ -148,14 +152,14 @@
 
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">Attendees for @eventName</h2>
+        <h2 class="mb-0">PNM Attendees for @eventName</h2>
         <a asp-controller="Event" asp-action="Index" class="btn btn-secondary mb-3">← Back to Events</a>
     </div>
 
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info">No attendees have checked in for this event yet.</div>
+        <div class="alert alert-info">No PNM attendees have checked in for this event yet.</div>
     }
     else
     {
@@ -179,4 +183,37 @@
             </tbody>
         </table>
     }
+
+    <h2>Member Attendees</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Checked In At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (memberAttendees.Any())
+            {
+                foreach (var member in memberAttendees)
+                {
+                    <tr>
+                        <td>@member.full_name</td>
+                        <td>@member.CheckedInAt.ToString("g")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="2" class="text-center">No members have checked in for this event yet.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+
 </div>
+
+

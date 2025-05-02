@@ -1,8 +1,4 @@
-﻿@model GreekRecruit.Models.Event
-@{
-    ViewData["Title"] = "Add Rush Event";
-}
-
+﻿@model List<GreekRecruit.Models.PointsCategory>
 
 @{
     var username = User.Identity?.Name;
@@ -13,11 +9,12 @@
     {
         isAdmin = true;
     }
-
 }
 
+<!-- Bootstrap -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 
 <nav class="navbar navbar-light bg-light p-3 d-flex justify-content-between">
     <div class="d-flex align-items-center gap-2">
@@ -81,23 +78,20 @@
 
     <style>
         @@media (max-width: 576px) {
-            #userMenuButton
+            #userMenuButton {
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+                padding: 0.4rem;
+            }
 
-        {
-            width: 36px;
-            height: 36px;
-            font-size: 0.9rem;
-            padding: 0.4rem;
-        }
+            .navbar-brand span {
+                font-size: 1rem;
+            }
 
-        .navbar-brand span {
-            font-size: 1rem;
-        }
-
-        .navbar .dropdown-toggle::after {
-            display: none;
-        }
-
+            .navbar .dropdown-toggle::after {
+                display: none;
+            }
         }
 
         #userMenuButton {
@@ -127,7 +121,6 @@
                 @if (isAdmin)
                 {
                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="AddUsers">Add Users</a></li>
-                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="BatchAddUsers">Batch Add Users</a></li>
                     <li><a class="dropdown-item" asp-controller="AdminTask" asp-action="Index">View Tasks</a></li>
                 }
                 <li><a asp-action="Logout" class="dropdown-item text-danger">Logout</a></li>
@@ -152,49 +145,60 @@
     </div>
 }
 
-<div class="container mt-5" style="max-width: 600px;">
-    <div class="card shadow">
-        <div class="card-body">
-            <h2 class="card-title mb-4 text-center">Add a New Event</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">Points System Codetable</h2>
+    <p class="text-muted">
+        If your organization implements a points system, an admin can configure how many points each of these actions is worth.
+    </p>
 
-            <form asp-controller="AddEvent" asp-action="SubmitEventData" method="post">
-                @Html.AntiForgeryToken()
 
-                <input asp-for="organization_id" type="hidden" />
-
-                <div class="mb-3">
-                    <label asp-for="event_name" class="form-label fw-bold">Event Name</label>
-                    <input asp-for="event_name" class="form-control"
-                           placeholder="e.g. Meet the Brothers" required autofocus/>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="event_datetime" class="form-label fw-bold">Date &amp; Time</label>
-                    <input asp-for="event_datetime" class="form-control"
-                           type="datetime-local" required step="60" />
-                           <!--Still showing weird datapoints-->
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="event_address" class="form-label fw-bold">Location</label>
-                    <input asp-for="event_address" class="form-control"
-                           placeholder="999 College Ave, New Brunswick, NJ" required />
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="event_description" class="form-label fw-bold">Description (optional)</label>
-                    <textarea asp-for="event_description" class="form-control"
-                              rows="3"
-                              placeholder="Optional details or notes..."></textarea>
-                </div>
-
-                <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mt-4">
-                    <button type="submit" class="btn btn-primary">Add Event</button>
-                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
-                        Cancel
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
+    @if (isAdmin)
+    {
+        <form asp-action="UpdatePointsCategories" method="post">
+            @Html.AntiForgeryToken()
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Action Name</th>
+                        <th>Points Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        <tr>
+                            <td>
+                                @Model[i].ActionName
+                                <input type="hidden" name="categories[@i].PointsCategoryID" value="@Model[i].PointsCategoryID" />
+                            </td>
+                            <td>
+                                <input type="number" name="categories[@i].PointsValue" value="@Model[i].PointsValue" class="form-control" min="0" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Action Name</th>
+                    <th>Points Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var category in Model)
+                {
+                    <tr>
+                        <td>@category.ActionName</td>
+                        <td>@category.PointsValue</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>

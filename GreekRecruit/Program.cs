@@ -44,6 +44,10 @@ builder.Services.AddSingleton<IAmazonS3>(_ =>
 
 builder.Services.AddSingleton<S3Service>();
 
+builder.Services.AddSingleton(new OpenAIServiceWrapper(
+    Environment.GetEnvironmentVariable("OpenAI__ApiKey")
+));
+
 // Force Kestrel to listen on port 8080 (Render uses this)
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 

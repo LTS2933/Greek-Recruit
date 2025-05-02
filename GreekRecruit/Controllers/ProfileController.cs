@@ -374,6 +374,59 @@ namespace GreekRecruit.Controllers
             return RedirectToAction("Index");
         }
 
+        //Shows the Points Categories codetable view for the Organization
+        [Authorize]
+        public async Task<IActionResult> PointsCategories()
+        {
+            var username = User.Identity?.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
+            if (user == null) return Unauthorized();
+
+            var categories = await _context.PointsCategories
+                .Where(c => c.organization_id == user.organization_id)
+                .ToListAsync();
+
+            return View(categories);
+        }
+
+        //Handles the form submission for Points Categories
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdatePointsCategories(List<PointsCategory> categories)
+        {
+            var username = User.Identity?.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
+            if (user == null) return Unauthorized();
+            if (user.role != "Admin") return Forbid();
+
+            foreach (var updatedCategory in categories)
+            {
+                var category = await _context.PointsCategories
+                    .FirstOrDefaultAsync(c => c.PointsCategoryID == updatedCategory.PointsCategoryID
+                                           && c.organization_id == user.organization_id);
+
+                if (category != null)
+                {
+                    category.PointsValue = updatedCategory.PointsValue;
+                }
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Points categories updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating points categories: {ex.Message}";
+            }
+
+            return RedirectToAction("PointsCategories");
+        }
+
+
+
         //Encryption tool for me only, will be used to encrypt user's SMTP app password from Google
         [Authorize]
         [HttpGet]
