@@ -22,8 +22,15 @@ var finalConnStr = rawConnStr.Replace("__thiswontwork__", sqlPassword);
 
 builder.Services.AddDbContext<SqlDataContext>(options =>
 {
-    options.UseSqlServer(finalConnStr);
+    options.UseSqlServer(finalConnStr, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 4,                     // Retry 4 times
+            maxRetryDelay: TimeSpan.FromSeconds(5),  // Wait up to 3 seconds between retries
+            errorNumbersToAdd: null);
+    });
 });
+
 
 builder.Services.AddAuthentication("MyCookieAuth")
     .AddCookie("MyCookieAuth", options =>

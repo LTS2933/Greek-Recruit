@@ -80,24 +80,64 @@ namespace GreekRecruit.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GenerateSummary(int pnmId)
         {
-            var pnm = await _context.PNMs.FindAsync(pnmId);
-            if (pnm == null) return NotFound();
+            var username = User.Identity?.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
+            if (user == null) return Unauthorized();
 
-            var comments = await _context.Comments
-                .Where(c => c.pnm_id == pnmId)
+            var pnm = await _context.PNMs.FirstOrDefaultAsync(p => p.pnm_id == pnmId);
+            if (pnm == null)
+            {
+                TempData["ErrorMessage"] = "PNM ID not found.";
+                return RedirectToAction("Index", "Home");
+            }
+            if (pnm.organization_id != user.organization_id)
+            {
+                TempData["ErrorMessage"] = "You do not have access to this PNM.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var commentsQuery = _context.Comments.Where(c => c.pnm_id == pnmId);
+            var commentCount = await commentsQuery.CountAsync();
+
+            if (commentCount < 5)
+            {
+                TempData["ErrorMessage"] = "Not enough comments to generate a summary. At least 5 comments are required.";
+                return RedirectToAction("Index", new { id = pnmId });
+            }
+
+            var allComments = await commentsQuery
                 .Select(c => c.comment_text)
                 .ToListAsync();
 
+            var random = new Random();
+            var selectedComments = allComments
+                .OrderBy(x => random.Next())
+                .Take(2)
+                .ToList();
+
+            var trimmedFname = pnm.pnm_fname.Trim().ToLower();
+            var trimmedLname = pnm.pnm_lname.Trim().ToLower();
+
             var eventsAttended = await _context.EventsAttendance
-                .Where(e => e.pnm_fname == pnm.pnm_fname && e.pnm_lname == pnm.pnm_lname
+                .Where(e => e.pnm_fname.Trim().ToLower() == trimmedFname
+                    && e.pnm_lname.Trim().ToLower() == trimmedLname
                     && e.organization_id == pnm.organization_id)
                 .CountAsync();
 
-            var summary = await _openAIService.GeneratePNMSummaryAsync(comments, eventsAttended);
+            try
+            {
+                var summary = await _openAIService.GeneratePNMSummaryAsync(selectedComments, eventsAttended);
+                TempData["Summary"] = summary;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                TempData["ErrorMessage"] = "Something went wrong while generating the summary. Please try again.";
+            }
 
-            TempData["Summary"] = summary;
-            return RedirectToAction("PNMProfile", new { pnmId });
+            return RedirectToAction("Index", new { id = pnmId });
         }
+
 
 
         //Submit a comment for a specific PNM

@@ -26,12 +26,14 @@ namespace GreekRecruit.Services
 
             var chatRequest = new ChatCompletionCreateRequest
             {
-                Model = OpenAI.ObjectModels.Models.Gpt_3_5_Turbo, // or Models.Gpt_4o
+                Model = OpenAI.ObjectModels.Models.Gpt_3_5_Turbo,
                 Messages = new List<ChatMessage>
                 {
                     ChatMessage.FromSystem(prompt)
-                }
+                },
+                MaxTokens = 280 // ~200–250 words
             };
+
 
             var response = await _openAIClient.ChatCompletion.CreateCompletion(chatRequest);
 
@@ -49,14 +51,26 @@ namespace GreekRecruit.Services
         {
             var sb = new StringBuilder();
             sb.AppendLine("You are summarizing chapter member feedback about a potential new member.");
-            sb.AppendLine("Write a 3–5 sentence summary based on their tone.");
+            sb.AppendLine("Write a concise 2–4 sentence summary capturing the tone of the comments.");
             sb.AppendLine($"This PNM has attended {eventsAttended} event{(eventsAttended == 1 ? "" : "s")}.");
             sb.AppendLine("Here are the comments:");
 
             foreach (var c in comments)
-                sb.AppendLine($"- {c}");
+                sb.AppendLine($"- {TrimComment(c, 30)}");
 
             return sb.ToString();
         }
+
+
+        private string TrimComment(string comment, int maxWords)
+        {
+            var words = comment.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length <= maxWords)
+                return comment;
+
+            var trimmed = string.Join(' ', words.Take(maxWords)) + "…";
+            return trimmed;
+        }
+
     }
 }
