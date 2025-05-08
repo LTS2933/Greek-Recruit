@@ -110,10 +110,6 @@ namespace GreekRecruit.Controllers
                     return RedirectToAction("AddUsers");
                 }
 
-                var mail = new MailMessage();
-                mail.From = new MailAddress(smtpUsername);
-                mail.To.Add(email);
-
                 if (!MailAddress.TryCreate(email, out _))
                 {
                     TempData["ErrorMessage"] = "Invalid email address! Please input a valid email address.";
@@ -132,9 +128,23 @@ namespace GreekRecruit.Controllers
                     organization_id = curr_user.organization_id
                 };
 
+                // Save to DB first
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // Prepare email AFTER saving user
+                var mail = new MailMessage();
+                mail.From = new MailAddress(smtpUsername);
+                mail.To.Add(email);
                 mail.Subject = "Join GreekRecruit!";
-                mail.Body = $"You've been invited to join GreekRecruit by your admin, {curr_user.full_name}.\nYou can now log in using these credentials.\nUsername: {user.username}\nPassword: {user.password}" +
-                            "\nFor security reasons, please reset your password. You can do so by clicking the Settings button in your profile dropdown.";
+                mail.Body = $"Hi {full_name},\n\n" +
+                            $"You've been invited to join GreekRecruit by your admin, {curr_user.full_name}!\n\n" +
+                            $"Here are your login credentials:\n" +
+                            $"Username: {user.username}\n" +
+                            $"Password: {user.password}\n\n" +
+                            $"Please sign in at: https://www.greek-recruit.com/\n\n" +
+                            $"For security reasons, we recommend that you reset your password after logging in. You can do this by clicking the Profile button in your profile dropdown.\n\n" +
+                            $"Welcome to GreekRecruit!";
 
                 var smtpClient = new SmtpClient(smtpServer)
                 {
@@ -143,30 +153,24 @@ namespace GreekRecruit.Controllers
                     EnableSsl = true,
                 };
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
                     await smtpClient.SendMailAsync(mail);
-
-                    _context.Users.Add(user);
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
                     TempData["SuccessMessage"] = $"User added and email sent to {email}";
                 }
-                catch (Exception innerEx)
+                catch (Exception emailEx)
                 {
-                    await transaction.RollbackAsync();
-                    TempData["ErrorMessage"] = $"Error adding user or sending email: {innerEx.Message}";
+                    TempData["ErrorMessage"] = $"User added, but failed to send email: {emailEx.Message}";
                 }
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error sending email: {ex.Message}";
+                TempData["ErrorMessage"] = $"Error adding user: {ex.Message}";
             }
 
             return RedirectToAction("AddUsers");
         }
+
 
         //The View for batch adding new users to the Organization is rendered
         [Authorize]
@@ -221,62 +225,83 @@ namespace GreekRecruit.Controllers
                 EnableSsl = true,
             };
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            int usersAdded = 0;
+            var newUsers = new List<User>();
+
+            // Step 1: Prepare and add users to the DB
+            for (int i = 0; i < emails.Count; i++)
+            {
+                var email = emails[i];
+                var fullName = fullNames[i];
+
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(fullName))
+                    continue;
+
+                if (await _context.Users.AnyAsync(u => u.email == email))
+                    continue;
+
+                var newUser = new User
+                {
+                    username = email.Substring(0, email.IndexOf("@")),
+                    email = email,
+                    full_name = fullName,
+                    role = "User",
+                    password = GenerateRandomPassword(),
+                    is_hashed_passowrd = "N",
+                    organization_id = curr_user.organization_id
+                };
+
+                _context.Users.Add(newUser);
+                newUsers.Add(newUser);
+                usersAdded++;
+            }
+
             try
             {
-                int usersAdded = 0;
-
-                for (int i = 0; i < emails.Count; i++)
-                {
-                    var email = emails[i];
-                    var fullName = fullNames[i];
-
-                    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(fullName))
-                        continue;
-
-                    if (await _context.Users.AnyAsync(u => u.email == email))
-                        continue;
-
-                    var newUser = new User
-                    {
-                        username = email.Substring(0, email.IndexOf("@")),
-                        email = email,
-                        full_name = fullName,
-                        role = "User",
-                        password = GenerateRandomPassword(),
-                        is_hashed_passowrd = "N",
-                        organization_id = curr_user.organization_id
-                    };
-
-                    var mail = new MailMessage
-                    {
-                        From = new MailAddress(smtpUsername),
-                        Subject = "Join GreekRecruit!",
-                        Body = $"You've been invited to join GreekRecruit by your admin, {curr_user.full_name}.\nYou can now log in using these credentials.\nUsername: {newUser.username}\nPassword: {newUser.password}" +
-                               "\nFor security reasons, please reset your password.",
-                        IsBodyHtml = false
-                    };
-                    mail.To.Add(email);
-
-                    await smtpClient.SendMailAsync(mail);
-
-                    _context.Users.Add(newUser);
-                    usersAdded++;
-                }
-
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                TempData["SuccessMessage"] = $"{usersAdded} users added and invited successfully!";
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                TempData["ErrorMessage"] = $"Error adding users: {ex.Message}";
+                TempData["ErrorMessage"] = $"Error adding users to database: {ex.Message}";
+                return RedirectToAction("BatchAddUsers");
             }
 
+            // Step 2: Send emails (outside of DB transaction)
+            int emailsSent = 0;
+            foreach (var newUser in newUsers)
+            {
+                var mail = new MailMessage
+                {
+                    From = new MailAddress(smtpUsername),
+                    Subject = "Join GreekRecruit!",
+                    Body = $"Hi {newUser.full_name},\n\n" +
+                           $"You've been invited to join GreekRecruit by your admin, {curr_user.full_name}!\n\n" +
+                           $"Here are your login credentials:\n" +
+                           $"Username: {newUser.username}\n" +
+                           $"Password: {newUser.password}\n\n" +
+                           $"Please sign in at: https://www.greek-recruit.com/\n\n" +
+                           $"For security reasons, we recommend that you reset your password after logging in. You can do this by clicking the Profile button in your profile dropdown.\n\n" +
+                           $"Welcome to GreekRecruit!",
+                    IsBodyHtml = false
+                };
+                mail.To.Add(newUser.email);
+
+                try
+                {
+                    await smtpClient.SendMailAsync(mail);
+                    emailsSent++;
+                }
+                catch (Exception emailEx)
+                {
+                    // Optionally log the error for this specific email
+                    // e.g., _logger.LogError(emailEx, $"Failed to send email to {newUser.email}");
+                }
+            }
+
+            TempData["SuccessMessage"] = $"{usersAdded} users added, {emailsSent} invitation emails sent successfully!";
             return RedirectToAction("BatchAddUsers");
         }
+
 
 
         //Helper method for AddUserData. Generates a random, valid password

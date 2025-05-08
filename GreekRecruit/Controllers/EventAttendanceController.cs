@@ -47,7 +47,7 @@ namespace GreekRecruit.Controllers
                 return RedirectToAction("Index", new { event_id = attendance.event_id });
             }
 
-            attendance.checked_in_at = DateTime.Now;
+            attendance.checked_in_at = DateTime.UtcNow;
 
             _context.EventsAttendance.Add(attendance);
             await _context.SaveChangesAsync();

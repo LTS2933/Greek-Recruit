@@ -177,7 +177,7 @@
                     <tr>
                         <td>@attendee.pnm_fname @attendee.pnm_lname</td>
                         <td>@attendee.pnm_schoolyear</td>
-                        <td>@attendee.checked_in_at.ToString("g")</td>
+                        <td>@attendee.checked_in_at.ToLocalTime().ToString("g")</td>
                     </tr>
                 }
             </tbody>
@@ -199,7 +199,7 @@
                 {
                     <tr>
                         <td>@member.full_name</td>
-                        <td>@member.CheckedInAt.ToString("g")</td>
+                        <td>@member.CheckedInAt.ToLocalTime().ToString("g")</td>
                     </tr>
                 }
             }

@@ -94,6 +94,7 @@ namespace GreekRecruit.Controllers
 
                 pnm.organization_id = user.organization_id;
                 pnm.pnm_semester = GetCurrentSemester();
+                pnm.pnm_dateadded = DateTime.UtcNow;
                 _context.PNMs.Add(pnm);
                 await _context.SaveChangesAsync();
 
@@ -110,7 +111,7 @@ namespace GreekRecruit.Controllers
                             UserID = user.user_id,
                             PointsCategoryID = addPnmPointsCategory.PointsCategoryID,
                             PointsAwarded = addPnmPointsCategory.PointsValue,
-                            DateAwarded = DateTime.Now
+                            DateAwarded = DateTime.UtcNow
                         };
                         _context.UserPointLogs.Add(pointLog);
                         await _context.SaveChangesAsync();
@@ -240,7 +241,8 @@ namespace GreekRecruit.Controllers
                     pnm_major = major,
                     pnm_schoolyear = schoolYear,
                     pnm_instagramhandle = insta,
-                    pnm_semester = GetCurrentSemester()
+                    pnm_semester = GetCurrentSemester(),
+                    pnm_dateadded = DateTime.UtcNow
                 };
 
                 newPnms.Add(pnm);
@@ -265,7 +267,7 @@ namespace GreekRecruit.Controllers
 
         private string GetCurrentSemester()
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var year = now.Year;
             return (now.Month <= 6 && !(now.Month == 6 && now.Day > 1))
                 ? $"Spring {year}"

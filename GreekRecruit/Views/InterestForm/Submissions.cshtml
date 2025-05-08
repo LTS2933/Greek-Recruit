@@ -199,7 +199,7 @@
                             }
                         </td>
                         <td>@(string.IsNullOrEmpty(submission.pnm_membersknown) ? "-" : submission.pnm_membersknown)</td>
-                        <td>@submission.date_submitted.ToString("MMM dd, yyyy h:mm tt")</td>
+                        <td>@submission.date_submitted.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
                     </tr>
                 }
             </tbody>

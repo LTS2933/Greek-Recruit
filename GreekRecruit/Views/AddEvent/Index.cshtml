@@ -170,8 +170,9 @@
 
                 <div class="mb-3">
                     <label asp-for="event_datetime" class="form-label fw-bold">Date &amp; Time</label>
-                    <input asp-for="event_datetime" class="form-control"
-                           type="datetime-local" required step="60" />
+                    <input name="event_datetime" class="form-control" type="datetime-local"
+                           value="@Model.event_datetime.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" required step="60" />
+
                            <!--Still showing weird datapoints-->
                 </div>
 

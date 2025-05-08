@@ -13,6 +13,6 @@ namespace GreekRecruit.Models
         [Required]
         public string form_name { get; set; }
 
-        public DateTime date_created { get; set; } = DateTime.Now;
+        public DateTime date_created { get; set; }
     }
 }

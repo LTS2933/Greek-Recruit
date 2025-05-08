@@ -57,7 +57,7 @@ namespace GreekRecruit.Controllers
                 task_description = description?.Trim(),
                 organization_id = user.organization_id,
                 user_id = user.user_id,
-                date_created = DateTime.Now,
+                date_created = DateTime.UtcNow,
                 due_date = due_date
             };
 
@@ -88,7 +88,7 @@ namespace GreekRecruit.Controllers
             if (task == null) return NotFound();
 
             task.is_completed = !task.is_completed;
-            task.date_completed = task.is_completed ? DateTime.Now : null;
+            task.date_completed = task.is_completed ? DateTime.UtcNow : null;
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");

@@ -37,6 +37,12 @@ namespace GreekRecruit.Controllers
             //var email = model.email;
             var enteredPassword = model.password;
 
+            if (string.IsNullOrWhiteSpace(uname) || string.IsNullOrWhiteSpace(enteredPassword))
+            {
+                TempData["ErrorMessage"] = "Invalid credentials!";
+                return View("Login");
+            }
+
             // Try to find a user by username and email
             var user = await _context.Users.FirstOrDefaultAsync(u => u.username == uname);
             if (user == null)

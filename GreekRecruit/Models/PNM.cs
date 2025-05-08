@@ -26,7 +26,7 @@ namespace GreekRecruit.Models
 
         public string? pnm_semester { get; set; } //shouldn't be null but just in case
 
-        public DateTime pnm_dateadded { get; set; } = DateTime.Now;
+        public DateTime pnm_dateadded { get; set; }
 
         public string? pnm_profilepictureurl { get; set; }
 

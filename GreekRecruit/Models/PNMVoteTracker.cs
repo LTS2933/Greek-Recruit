@@ -13,6 +13,6 @@ namespace GreekRecruit.Models
         [Required]
         public int user_id { get; set; }
 
-        public DateTime vote_time { get; set; } = DateTime.Now;
+        public DateTime vote_time { get; set; }
     }
 }

@@ -28,7 +28,8 @@ namespace GreekRecruit.Controllers
             
             var model = new Event
             {
-                organization_id = user.organization_id
+                organization_id = user.organization_id,
+                event_datetime = DateTime.UtcNow.ToLocalTime().AddMinutes(1)
             };
 
             return View("Index", model);
@@ -49,6 +50,8 @@ namespace GreekRecruit.Controllers
             {
 
                 model.organization_id = user.organization_id;
+
+                model.event_datetime = DateTime.SpecifyKind(model.event_datetime, DateTimeKind.Local).ToUniversalTime();
 
                 _context.Events.Add(model);
                 await _context.SaveChangesAsync();

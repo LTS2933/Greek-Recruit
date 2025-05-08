@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using GreekRecruit.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using GreekRecruit.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
@@ -160,7 +157,7 @@ namespace GreekRecruit.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                comment.comment_dt = DateTime.Now;
+                comment.comment_dt = DateTime.UtcNow;
                 comment.pnm_id = pnm_id;
                 comment.comment_author = username ?? "Unknown";
                 comment.comment_author_name = user.full_name ?? "Unknown";
@@ -188,7 +185,7 @@ namespace GreekRecruit.Controllers
                             UserID = user.user_id,
                             PointsCategoryID = commentPointsCategory.PointsCategoryID,
                             PointsAwarded = commentPointsCategory.PointsValue,
-                            DateAwarded = DateTime.Now
+                            DateAwarded = DateTime.UtcNow
                         };
                         _context.UserPointLogs.Add(pointLog);
                         await _context.SaveChangesAsync();
@@ -395,7 +392,8 @@ namespace GreekRecruit.Controllers
                 pnm_id = pnm_id,
                 voting_open_yn = true,
                 yes_count = 0,
-                no_count = 0
+                no_count = 0,
+                session_open_dt = DateTime.UtcNow
             };
             _context.PNMVoteSessions.Add(newSession);
 
@@ -430,7 +428,7 @@ namespace GreekRecruit.Controllers
             else
             {
                 currentSession.voting_open_yn = false;
-                currentSession.session_close_dt = DateTime.Now;
+                currentSession.session_close_dt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = "Voting session closed!";
@@ -460,10 +458,10 @@ namespace GreekRecruit.Controllers
                 return View("NoActiveSession", pnm);
             }
 
-            if (DateTime.Now - currentSession.session_open_dt > TimeSpan.FromMinutes(20))
+            if (DateTime.UtcNow - currentSession.session_open_dt > TimeSpan.FromMinutes(20))
             {
                 currentSession.voting_open_yn = false;
-                currentSession.session_close_dt = DateTime.Now;
+                currentSession.session_close_dt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 return View("NoActiveSession", pnm);
@@ -492,10 +490,10 @@ namespace GreekRecruit.Controllers
                 return RedirectToAction("Vote", new { pnm_id });
             }
 
-            if (DateTime.Now - session.session_open_dt > TimeSpan.FromMinutes(20))
+            if (DateTime.UtcNow - session.session_open_dt > TimeSpan.FromMinutes(20))
             {
                 session.voting_open_yn = false;
-                session.session_close_dt = DateTime.Now;
+                session.session_close_dt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 TempData["ErrorMessage"] = "Session has expired (20 min limit).";
@@ -527,7 +525,8 @@ namespace GreekRecruit.Controllers
             var tracker = new PNMVoteTracker
             {
                 vote_session_id = session.vote_session_id,
-                user_id = user.user_id
+                user_id = user.user_id,
+                vote_time = DateTime.UtcNow
             };
             _context.PNMVoteTrackers.Add(tracker);
 
@@ -545,7 +544,7 @@ namespace GreekRecruit.Controllers
                         UserID = user.user_id,
                         PointsCategoryID = votePointsCategory.PointsCategoryID,
                         PointsAwarded = votePointsCategory.PointsValue,
-                        DateAwarded = DateTime.Now
+                        DateAwarded = DateTime.UtcNow
                     };
                     _context.UserPointLogs.Add(pointLog);
                     await _context.SaveChangesAsync();

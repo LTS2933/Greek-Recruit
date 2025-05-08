@@ -259,8 +259,8 @@
                     var yesPercent = totalVotes > 0 ? ((double)session.yes_count / totalVotes * 100).ToString("F1") + "%" : "—";
                     <tr>
                         <td>@pnm.pnm_fname @pnm.pnm_lname</td>
-                        <td>@session.session_open_dt.ToString("g")</td>
-                        <td>@(session.session_close_dt?.ToString("g") ?? "Open")</td>
+                        <td>@session.session_open_dt.ToLocalTime().ToString("g")</td>
+                        <td>@(session.session_close_dt?.ToLocalTime().ToString("g") ?? "Open")</td>
                         <td>@session.yes_count</td>
                         <td>@session.no_count</td>
                         <td>@yesPercent</td>

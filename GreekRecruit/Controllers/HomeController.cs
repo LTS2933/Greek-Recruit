@@ -83,7 +83,7 @@ public class HomeController : Controller
         ViewData["TaskPreview"] = taskPreview;
         ViewData["CurrentSemester"] = semester;
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         var activeEvent = await _context.Events
             .Where(e => e.event_datetime <= now && e.event_datetime.AddHours(3) >= now)
@@ -183,7 +183,7 @@ public class HomeController : Controller
         {
             EventId = eventId,
             UserId = user.user_id,
-            CheckedInAt = DateTime.Now
+            CheckedInAt = DateTime.UtcNow
         };
         _context.MemberEventAttendances.Add(checkIn);
         await _context.SaveChangesAsync();
@@ -200,7 +200,7 @@ public class HomeController : Controller
                     UserID = user.user_id,
                     PointsCategoryID = pointsCategory.PointsCategoryID,
                     PointsAwarded = pointsCategory.PointsValue,
-                    DateAwarded = DateTime.Now
+                    DateAwarded = DateTime.UtcNow
                 };
                 _context.UserPointLogs.Add(pointLog);
                 await _context.SaveChangesAsync();
@@ -227,7 +227,7 @@ public class HomeController : Controller
 
     private string GetCurrentSemester()
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         return (now.Month <= 6 && !(now.Month == 6 && now.Day > 1))
             ? $"Spring {now.Year}"
             : $"Fall {now.Year}";

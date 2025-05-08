@@ -65,6 +65,8 @@ public class InterviewController : Controller
 
         interview.organization_id = user.organization_id;
         interview.interviewer_user_id = user.user_id;
+        interview.interview_datetime = DateTime.SpecifyKind(interview.interview_datetime, DateTimeKind.Local).ToUniversalTime();
+
 
         if (!ModelState.IsValid)
         {
@@ -136,8 +138,8 @@ public class InterviewController : Controller
         {
             id = i.interview_id,
             title = $"{i.pnm_fname} {i.pnm_lname}",
-            start = i.interview_datetime.ToString("s"),
-            end = i.interview_datetime.AddMinutes(30).ToString("s"),
+            start = i.interview_datetime.ToLocalTime().ToString("s"),
+            end = i.interview_datetime.AddMinutes(30).ToLocalTime().ToString("s"),
             allDay = false,
             notes = i.notes ?? ""
         });

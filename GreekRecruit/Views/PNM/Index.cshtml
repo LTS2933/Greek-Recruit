@@ -400,8 +400,12 @@
                         @foreach (var session in sessions)
                         {
                             <tr>
-                                <td>@session.session_open_dt</td>
-                                <td>@(session.session_close_dt.HasValue ? session.session_close_dt.Value.ToString() : "Still Open")</td>
+                                <td>@session.session_open_dt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                                <td>
+                                    @(session.session_close_dt.HasValue
+                                        ? session.session_close_dt.Value.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")
+                                        : "Still Open")
+                                </td>
                                 <td>@session.yes_count</td>
                                 <td>@session.no_count</td>
                                 <td>
@@ -442,10 +446,11 @@
                     @foreach (var comment in comments)
                     {
                         <li class="list-group-item">
-                            <strong>@comment.comment_dt.ToShortDateString() @comment.comment_dt.ToShortTimeString()</strong>
+                            <strong>@comment.comment_dt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</strong>
                             <p class="mb-1">@comment.comment_text</p>
                             <span class="text-muted">- @comment.comment_author_name</span>
                         </li>
+
                     }
                 </ul>
             }

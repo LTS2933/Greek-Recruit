@@ -148,7 +148,7 @@ public class DashboardController : Controller
 
     private string GetCurrentSemester()
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         return (now.Month <= 6 && !(now.Month == 6 && now.Day > 1))
             ? $"Spring {now.Year}"
             : $"Fall {now.Year}";

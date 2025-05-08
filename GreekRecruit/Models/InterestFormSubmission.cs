@@ -40,7 +40,7 @@ namespace GreekRecruit.Models
 
         public byte[]? pnm_profilepicture { get; set; }
 
-        public DateTime date_submitted { get; set; } = DateTime.Now;
+        public DateTime date_submitted { get; set; }
 
         public string? pnm_profilepictureurl { get; set; }
     }

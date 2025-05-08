@@ -74,7 +74,8 @@ public class InterestFormController : Controller
         var form = new InterestForm
         {
             form_name = form_name.Trim(),
-            organization_id = user.organization_id
+            organization_id = user.organization_id,
+            date_created = DateTime.UtcNow
         };
 
         _context.InterestForms.Add(form);
@@ -165,7 +166,7 @@ public class InterestFormController : Controller
 
         submission.form_id = form_id;
         submission.organization_id = form.organization_id;
-        submission.date_submitted = DateTime.Now;
+        submission.date_submitted = DateTime.UtcNow;
         submission.pnm_profilepictureurl = fileName;
 
         _context.InterestFormSubmissions.Add(submission);
@@ -182,7 +183,8 @@ public class InterestFormController : Controller
             pnm_gpa = submission.pnm_gpa,
             pnm_profilepictureurl = fileName,
             pnm_instagramhandle = submission.pnm_instagramhandle,
-            pnm_semester = GetCurrentSemester()
+            pnm_semester = GetCurrentSemester(),
+            pnm_dateadded = DateTime.UtcNow
         };
 
         _context.PNMs.Add(pnm);
@@ -202,7 +204,7 @@ public class InterestFormController : Controller
 
     private string GetCurrentSemester()
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         return (now.Month <= 6 && !(now.Month == 6 && now.Day > 1))
             ? $"Spring {now.Year}"
             : $"Fall {now.Year}";

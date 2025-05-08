@@ -21,7 +21,7 @@ namespace GreekRecruit.Models
 
         public bool is_completed { get; set; } = false;
 
-        public DateTime date_created { get; set; } = DateTime.Now;
+        public DateTime date_created { get; set; }
 
         public DateTime? date_completed { get; set; }
 

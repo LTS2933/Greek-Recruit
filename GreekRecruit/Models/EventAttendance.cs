@@ -18,5 +18,5 @@ public class EventAttendance
     [Required]
     public string pnm_schoolyear { get; set; }
 
-    public DateTime checked_in_at { get; set; } = DateTime.Now;
+    public DateTime checked_in_at { get; set; }
 }

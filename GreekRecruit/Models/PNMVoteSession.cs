@@ -8,7 +8,7 @@ public class PNMVoteSession
 
     public int pnm_id { get; set; }
 
-    public DateTime session_open_dt { get; set; } = DateTime.Now;
+    public DateTime session_open_dt { get; set; }
     public DateTime? session_close_dt { get; set; } // null if still open
 
     public int yes_count { get; set; } = 0;

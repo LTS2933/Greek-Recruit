@@ -27,7 +27,10 @@
  
 
     <h2 class="mb-3 text-center">Check-In: @Model.event_name</h2>
-    <p class="text-muted text-center">@Model.event_datetime.ToString("MMMM dd, yyyy • h:mm tt")</p>
+    <p class="text-muted text-center">
+        @Model.event_datetime.ToLocalTime().ToString("MMMM dd, yyyy • h:mm tt")
+    </p>
+
 
     <form asp-controller="EventAttendance" asp-action="SubmitAttendance" method="post" class="mx-auto" style="max-width: 500px;">
         @Html.AntiForgeryToken()
