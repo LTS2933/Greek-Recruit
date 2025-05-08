@@ -23,6 +23,12 @@ namespace GreekRecruit.Controllers
             return View();
         }
 
+        [HttpGet]
+        public IActionResult Landing()
+        {
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Start(string orgName, string adminEmail)
