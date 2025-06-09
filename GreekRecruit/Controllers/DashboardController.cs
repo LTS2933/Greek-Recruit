@@ -43,11 +43,25 @@ public class DashboardController : Controller
             .Where(p => p.organization_id == orgId && p.pnm_semester == currentSemester && p.pnm_gpa.HasValue)
             .AverageAsync(p => p.pnm_gpa.Value);
 
-        var totalEvents = _context.Events
-            .Where(e => e.organization_id == orgId)
-            .AsEnumerable()
-            .Where(e => GetSemesterFromDate(e.event_datetime) == currentSemester)
-            .Count();
+        DateTime semesterStart, semesterEnd;
+        var now = DateTime.UtcNow;
+        if (currentSemester.StartsWith("Spring"))
+        {
+            semesterStart = new DateTime(now.Year, 1, 1);
+            semesterEnd = new DateTime(now.Year, 6, 1); // Inclusive of June 1
+        }
+        else
+        {
+            semesterStart = new DateTime(now.Year, 6, 2);
+            semesterEnd = new DateTime(now.Year, 12, 31);
+        }
+
+        var totalEvents = await _context.Events
+            .Where(e => e.organization_id == orgId &&
+                        e.event_datetime >= semesterStart &&
+                        e.event_datetime <= semesterEnd)
+            .CountAsync();
+
 
         var recentSessions = await _context.PNMVoteSessions
             .Where(v => _context.PNMs.Any(p => p.pnm_id == v.pnm_id && p.organization_id == orgId && p.pnm_semester == currentSemester))
@@ -121,12 +135,12 @@ public class DashboardController : Controller
                     return category?.PointsValue ?? 0;
                 });
 
-                var user = _context.Users.FirstOrDefault(u => u.user_id == g.Key);
                 return new
                 {
-                    FullName = (user != null) ? $"{user.full_name}" : "Unknown",
+                    FullName = userLookup.ContainsKey(g.Key) ? userLookup[g.Key] : "Unknown",
                     TotalPoints = totalPoints
                 };
+
             })
             .OrderByDescending(x => x.TotalPoints)
             .ToList();

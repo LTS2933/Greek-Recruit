@@ -24,16 +24,6 @@
         box-shadow: 0 0 25px rgba(0, 0, 0, 0.08);
     }
 
-    .btn-primary {
-        background-color: #0d6efd;
-        border: none;
-        font-weight: 600;
-    }
-
-        .btn-primary:hover {
-            background-color: #0b5ed7;
-        }
-
     .subscription-summary {
         background-color: #e9f7ef;
         border-left: 5px solid #28a745;
@@ -75,26 +65,43 @@
         <p class="text-center text-muted">
             You're signing up your organization: <strong>@orgName</strong><br />
             Confirmation will be sent to <strong>@adminEmail</strong><br />
-            <span class="text-danger fw-semibold">Please make sure you have talked to an admin before completing this step.</span>
+            <span class="text-danger fw-semibold">Please confirm with an admin before completing this step.</span>
         </p>
 
         <div class="subscription-summary text-center">
             <strong>Subscription Plan:</strong><br />
             <span class="text-success fw-semibold">$1.00 per year</span><br />
-            Billed annually to the card below.
+            Billed annually to your card.
         </div>
 
         <form id="payment-form" method="post">
             @Html.AntiForgeryToken()
 
             <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="billingName" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Billing Address</label>
+                <input type="text" class="form-control" id="billingAddress" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Postal Code</label>
+                <input type="text" class="form-control" id="billingPostalCode" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Phone Number (optional)</label>
+                <input type="tel" class="form-control" id="billingPhone">
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">Card Details</label>
                 <div id="card-element" class="form-control p-2"></div>
                 <div id="card-errors" class="text-danger mt-2"></div>
             </div>
-
-            <input type="hidden" id="orgName" value="@orgName" />
-            <input type="hidden" id="adminEmail" value="@adminEmail" />
 
             <div class="d-grid mt-4">
                 <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">Submit Payment</button>
@@ -107,7 +114,6 @@
     </div>
 </div>
 
-<!-- Loading Spinner -->
 <div class="spinner-overlay" id="spinner">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Processing...</span>
@@ -132,7 +138,15 @@
         const { paymentMethod, error } = await stripe.createPaymentMethod({
             type: "card",
             card: card,
-            billing_details: { email: document.getElementById("adminEmail").value }
+            billing_details: {
+                email: "@adminEmail",
+                name: document.getElementById("billingName").value,
+                address: {
+                    line1: document.getElementById("billingAddress").value,
+                    postal_code: document.getElementById("billingPostalCode").value
+                },
+                phone: document.getElementById("billingPhone").value
+            }
         });
 
         if (error) {
@@ -149,8 +163,8 @@
             hiddenForm.innerHTML = `
                 <input type="hidden" name="__RequestVerificationToken" value="${csrfToken}">
                 <input type="hidden" name="paymentMethodId" value="${paymentMethod.id}">
-                <input type="hidden" name="orgName" value="${document.getElementById('orgName').value}">
-                <input type="hidden" name="adminEmail" value="${document.getElementById('adminEmail').value}">
+                <input type="hidden" name="orgName" value="@orgName">
+                <input type="hidden" name="adminEmail" value="@adminEmail">
             `;
 
             document.body.appendChild(hiddenForm);

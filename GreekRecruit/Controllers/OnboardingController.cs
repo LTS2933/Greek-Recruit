@@ -50,24 +50,36 @@ namespace GreekRecruit.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateSubscription(string orgName, string adminEmail, string paymentMethodId)
+        public async Task<IActionResult> CreateSubscription(
+             string orgName,
+             string adminEmail,
+             string paymentMethodId,
+             string billingName,
+             string billingAddress,
+             string billingPostalCode,
+             string billingPhone)
         {
             try
             {
-                var subscriptionId = await _stripeService.CreateSubscriptionAsync(orgName, adminEmail, paymentMethodId);
+                var subscriptionId = await _stripeService.CreateSubscriptionAsync(
+                    orgName,
+                    adminEmail,
+                    paymentMethodId,
+                    billingName,
+                    billingAddress,
+                    billingPostalCode,
+                    billingPhone);
 
-                // Log subscriptionId, orgName, and adminEmail to database if needed
-                var user = _context.Users.FirstOrDefault(u => u.email == adminEmail);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.email == adminEmail);
                 if (user != null)
                 {
                     user.SubscriptionId = subscriptionId;
                 }
                 else
                 {
-                    // If the user doesn't exist yet, create them
                     _context.Users.Add(new User
                     {
-                        username = adminEmail.Split('@')[0], // or however you want to format
+                        username = adminEmail.Split('@')[0],
                         email = adminEmail,
                         SubscriptionId = subscriptionId,
                         role = "Admin",
@@ -75,7 +87,6 @@ namespace GreekRecruit.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-
 
                 TempData["SuccessMessage"] = "Thanks! We’ll be in touch shortly to get your organization set up.";
                 return RedirectToAction("Success");
@@ -86,6 +97,7 @@ namespace GreekRecruit.Controllers
                 return RedirectToAction("Start");
             }
         }
+
 
         [HttpGet]
         public IActionResult Success()
