@@ -1,5 +1,5 @@
 # GreekRecruit 
-A streamlined web app designed to help Greek organizations and clubs alike manage their recruitment process, track/discuss PNMs (Potential New Members), and facilitate voting and event planning in an organized manner.
+An integrated web application designed to help Greek organizations and university clubs alike manage their recruitment process, track/discuss PNMs (Potential New Members), and facilitate voting, keep a point system if applicable, and plan events in an organized manner.
 
 ## Features
 
