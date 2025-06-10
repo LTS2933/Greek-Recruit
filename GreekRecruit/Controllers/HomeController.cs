@@ -215,6 +215,14 @@ public class HomeController : Controller
         return RedirectToAction("Index");
     }
 
+    //Returns the view for the privacy policy
+    [AllowAnonymous]
+    public IActionResult Privacy()
+    {
+        return View();
+    }
+
+
 
 
     //Logout
