@@ -222,6 +222,13 @@ public class HomeController : Controller
         return View();
     }
 
+    //Returns the view for the Terms and conditions
+    [AllowAnonymous]
+    public IActionResult Terms()
+    {
+        return View();
+    }
+
 
 
 
