@@ -29,7 +29,7 @@ namespace GreekRecruit.Controllers
             var model = new Event
             {
                 organization_id = user.organization_id,
-                event_datetime = DateTime.UtcNow.ToLocalTime().AddMinutes(1)
+                event_datetime = DateTime.Now.AddMinutes(1)
             };
 
             return View("Index", model);
