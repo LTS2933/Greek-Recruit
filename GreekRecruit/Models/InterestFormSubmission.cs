@@ -43,5 +43,9 @@ namespace GreekRecruit.Models
         public DateTime date_submitted { get; set; }
 
         public string? pnm_profilepictureurl { get; set; }
+
+        public string? pnm_hometown { get; set; }
+
+        public string? pnm_clubinvolvement { get; set; }
     }
 }

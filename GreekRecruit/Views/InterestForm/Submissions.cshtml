@@ -173,8 +173,10 @@
                     <th>Email</th>
                     <th>Phone</th>
                     <th>School Year</th>
+                    <th>Hometown</th>
                     <th>GPA</th>
                     <th>Major</th>
+                    <th>Club Involvement on Campus</th>
                     <th>Instagram</th>
                     <th>Members Known</th>
                     <th>Date Submitted</th>
@@ -188,8 +190,10 @@
                         <td><a href="mailto:@submission.pnm_email">@submission.pnm_email</a></td>
                         <td>@submission.pnm_phone</td>
                         <td>@submission.pnm_schoolyear</td>
+                        <td>@(string.IsNullOrEmpty(submission.pnm_hometown) ? "-" : submission.pnm_hometown)</td>
                         <td>@(submission.pnm_gpa.HasValue ? submission.pnm_gpa.Value.ToString("0.00") : "-")</td>
                         <td>@(string.IsNullOrEmpty(submission.pnm_major) ? "-" : submission.pnm_major)</td>
+                        <td>@(string.IsNullOrEmpty(submission.pnm_clubinvolvement) ? "-" : submission.pnm_clubinvolvement)</td>
                         <td>
                             @if (!string.IsNullOrEmpty(submission.pnm_instagramhandle))
                             {
